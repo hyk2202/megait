@@ -1,5 +1,4 @@
 /dot_env
-init.bat
-pull.bat
-push.bat
+*.bat
 /프로젝트/1번/1번_프로젝트_결과.pdf
+*.csv
