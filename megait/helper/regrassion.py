@@ -191,3 +191,4 @@ def my_linear_regrassion_report(fit : LinearRegression, x_train : DataFrame, y_t
             print(s)
             
         print("")
+        

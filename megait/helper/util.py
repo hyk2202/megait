@@ -3,8 +3,6 @@ from pandas import DataFrame, read_excel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-
-
 def my_pretty_table(data: DataFrame) -> None:
     print(tabulate(data, headers='keys', tablefmt='psql',showindex=True, numalign="right"))
 

@@ -1,7 +1,13 @@
 from pandas import DataFrame
+import scipy
 from scipy.stats import shapiro, normaltest, bartlett, levene, ttest_1samp, ttest_ind, ttest_rel, mannwhitneyu, pearsonr
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
+from pingouin import anova
+from pingouin import welch_anova
+from statsmodels.sandbox.stats.multicomp import MultiComparison
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+from pingouin import pairwise_tukey, pairwise_tests, pairwise_gameshowell
 from helper.util import my_pretty_table
 
 def my_normal_test(data: DataFrame, method: str = "n") -> None:
@@ -228,3 +234,65 @@ def my_ttest_rel(data: DataFrame, xname: str, yname: str, equal_var: bool = True
         
     rdf = DataFrame(result).set_index(["test", "alternative"])
     my_pretty_table(rdf)
+    
+def my_anova(data: DataFrame, target: str, hue, equal_var: bool = True) -> None:
+    """분산분석을 수행하고 결과를 출력한다.
+
+    Args:
+        data (DataFrame): 데이터프레임 객체
+        target (str): 종속변수의 컬럼명
+        hue (_type_): 명목형 변수의 컬럼명을 저장하고 있는 리스트
+        equal_var (bool, optional): 등분산성 가정 여부. Defaults to True.
+    """
+    
+    # 일원 분산 분석 명목형 파라미터 정리
+    if type(hue) == str or type(hue) == list and len(hue) == 1:
+        if (type(hue) == list):
+            hue = hue[0]
+    
+    # pingouin 패키지를 사용하는 경우
+    if equal_var:
+        print("pingouin.anova")
+        aov = anova(data=data, dv=target, between=hue, detailed=True)
+    else:
+        print("pingouin.welch_anova")
+        aov = welch_anova(data=data, dv=target, between=hue)
+    my_pretty_table(aov)
+    
+    # statsmodels 패키지를 사용하는 경우
+    # 일원 분산 분석
+    if type(hue) == str or type(hue) == list and len(hue) == 1:            
+        expr = f'{target} ~ C({hue})'
+        typ = 1
+    # 이원 분산 분석 -> type(hue) == list and len(hue) > 1:
+    else:
+        expr = f'{target} ~ '
+        for i, h in enumerate(hue):
+            expr += f'C({h})'
+            if i + 1 < len(hue):
+                expr += '*'
+        typ = 2
+    
+    if equal_var:
+        print("statsmodels.anova.anova_lm")  
+        lm = ols(expr, data=data).fit()
+        anova_result = anova_lm(lm, typ=typ)
+        my_pretty_table(anova_result)
+        s = anova_result['F'][0]
+        p = anova_result['PR(>F)'][0]
+        print(f"\n[anova_lm] statistic: {s:.3f}, p-value: {p:.3f}, {"대립" if p <= 0.05 else "귀무"}가설 채택")
+   
+def my_correlation(data: DataFrame) -> None:
+    """데이터프레임 내에 있는 모든 컬럼들에 대해 상관계수를 계산하고 결과를 출력한다.
+
+    Args:
+        data (DataFrame): 데이터프레임 객체
+    """
+    print(data.corr())
+    
+    for c in data.columns:
+        for d in data.columns:
+            if c != d:
+                s, p = pearsonr(data[c], data[d])
+                print(f"[{c} vs {d}] correlation: {s:.3f}, p-value: {p:.3f}, 상관성 {"있음" if p <= 0.05 else "없음"}")
+

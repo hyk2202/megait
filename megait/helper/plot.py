@@ -19,8 +19,6 @@ from pandas import DataFrame
 from scipy.spatial import ConvexHull
 from statannotations.Annotator import Annotator
 
-
-
 def my_boxplot(df: DataFrame, orient : str = 'v', hue=None, figsize: tuple = (10, 4), dpi: int = 150, plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None) -> None:
     """데이터프레임 내의 모든 컬럼에 대해 상자그림을 그려서 분포를 확인한다.
 
@@ -51,7 +49,7 @@ def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str =
         bins (int or list ,optional): 히스토그램의 구간 수 혹은 리스트. Defaults to auto.
         kde (bool, optional): 커널밀도추정을 함께 출력할지 여부. Defaults to True.
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     
@@ -73,8 +71,8 @@ def my_scatterplot(df: DataFrame, xname: str = None, yname: str = None, hue=None
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.scatterplot(data=df, x=xname, y=yname, hue=hue)
@@ -91,7 +89,7 @@ def my_regplot(df: DataFrame, xname: str = None, yname: str = None, figsize: tup
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
         ci (int in [0,100] or None, optional) : 신뢰구간설정
     """
     plt.figure(figsize=figsize, dpi=dpi)
@@ -110,8 +108,8 @@ def my_lmplot(df: DataFrame, xname: str = None, yname: str = None, hue : str = N
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     g = sb.lmplot(data=df, x=xname, y=yname, hue=hue)
     g.fig.set_figwidth(figsize[0])
@@ -128,10 +126,10 @@ def my_pairplot(df: DataFrame, diag_kind: str = "auto", hue = None, figsize: tup
     Args:
         df (DataFrame): 데이터프레임 객체
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         diag_kind ( ['auto', 'hist', 'kde', None], optional) : 대각그래프에 들어갈 그래프 설정
         kind (['scatter', 'kde', 'hist', 'reg'], optional ): 그 외 그래프 설정
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     sb.pairplot(df, hue=hue, diag_kind=diag_kind, kind = kind)
     plt.title(plt_title)
@@ -145,8 +143,8 @@ def my_countplot(df: DataFrame, xname: str = None, yname: str = None, hue=None, 
         df (DataFrame): 데이터프레임 객체
         xname (str): x축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.countplot(data=df, x=xname, y=yname, hue=hue)
@@ -165,8 +163,8 @@ def my_barplot(df: DataFrame, xname: str = None, yname: str = None, hue = None, 
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.barplot(data=df, x=xname, y=yname, hue=hue)
@@ -185,8 +183,8 @@ def my_boxenplot(df: DataFrame, xname: str = None, yname: str = None, hue = None
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.boxenplot(data=df, x=xname, y=yname, hue=hue)
@@ -202,8 +200,8 @@ def my_violinplot(df: DataFrame, xname: str = None, yname: str = None, hue = Non
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.violinplot(data=df, x=xname, y=yname, hue=hue)
@@ -220,8 +218,8 @@ def my_pointplot(df: DataFrame, xname: str = None, yname: str = None, hue = None
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.pointplot(data=df, x=xname, y=yname, hue=hue)
@@ -238,8 +236,8 @@ def my_jointplot(df: DataFrame, xname: str = None, yname: str = None, hue = None
         xname (str): x축에 사용할 컬럼명
         yname (str): y축에 사용할 컬럼명
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     g = sb.jointplot(data=df, x=xname, y=yname, hue=hue)
     g.fig.set_figwidth(figsize[0])
@@ -255,15 +253,14 @@ def my_heatmap(data: DataFrame, cmap = 'coolwarm', figsize: tuple = (10, 4), plt
     Args:
         data (DataFrame): 데이터프레임 객체
         cmap (str, optional): 칼라맵. Defaults to 'coolwarm'.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     sb.heatmap(data, annot=True, cmap=cmap, fmt='.2g')
     plt.title(plt_title)
     plt.show()
     plt.close()
-
 
 def my_convex_hull(data: DataFrame, xname: str = None, yname: str = None, * , hue: str , cmap:str = 'coolwarm', plt_grid : bool = True, plt_title : str = None, figsize: tuple = (10, 4), dpi: int = 150):
 
@@ -275,8 +272,8 @@ def my_convex_hull(data: DataFrame, xname: str = None, yname: str = None, * , hu
         yname (str): y축에 사용할 컬럼명
         hue (str): 색상을 구분할 기준이 되는 컬럼명
         cmap (str, optional): 칼라맵. Defaults to 'coolwarm'.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     
@@ -307,8 +304,8 @@ def my_kde_confidence_interval(data: DataFrame, clevel=0.95, figsize: tuple = (1
     Args:
         data (DataFrame): 데이터프레임 객체
         clevel (float, optional): 신뢰수준. Defaults to 0.95.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 6).
-        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
 
@@ -352,3 +349,32 @@ def my_kde_confidence_interval(data: DataFrame, clevel=0.95, figsize: tuple = (1
     plt.title(plt_title)
     plt.show()
     plt.close()
+
+def my_pvalue1_anotation(data : DataFrame, target: str, hue: str, pairs: list, test: str = "t-test_ind", text_format: str = "star", loc: str = "outside", figsize: tuple=(10, 4), dpi: int=150) -> None:
+    """데이터프레임 내의 컬럼에 대해 상자그림을 그리고 p-value를 함께 출력한다.
+
+    Args:
+        data (DataFrame): 데이터프레임 객체
+        target (str): 종속변수에 대한 컬럼명
+        hue (str): 명목형 변수에 대한 컬럼명
+        pairs (list, optional): 비교할 그룹의 목록. 명목형 변수에 포함된 값 중에서 비교 대상을 [("A","B")] 형태로 선정한다.
+        test (str, optional): 검정방법. Defaults to "t-test_ind".
+            - t-test_ind(독립,등분산), t-test_welch(독립,이분산)
+            - t-test_paired(대응,등분산), Mann-Whitney(대응,이분산), Mann-Whitney-gt, Mann-Whitney-ls
+            - Levene(분산분석), Wilcoxon, Kruskal
+        text_format (str, optional): 출력형식(full, simple, star). Defaults to "star".
+        loc (str, optional): 출력위치(inside, outside). Defaults to "outside".
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
+    """
+    plt.figure(figsize=figsize, dpi=dpi)
+    ax = sb.boxplot(data=data, x=hue, y=target)
+
+    annotator = Annotator(ax, data=data, x=hue, y=target, pairs=pairs)
+    annotator.configure(test=test, text_format=text_format, loc=loc)
+    annotator.apply_and_annotate()
+
+    sb.despine()
+    plt.show()
+    plt.close()
+
