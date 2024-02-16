@@ -15,7 +15,7 @@ from statsmodels.stats.stattools import durbin_watson
 from scipy.stats import t, f 
 from helper.util import my_pretty_table
 
-def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFrame, y_test : Series, use_plot : bool = True) -> LinearRegression :
+def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFrame, y_test : Series, use_plot : bool = True, report=True) -> LinearRegression :
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -64,6 +64,9 @@ def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFra
     
     result_df = DataFrame(result_data, index=["훈련데이터", "검증데이터"])
     my_pretty_table(result_df)
+    
+    if report:
+        my_linear_regrassion_report(fit, x_train, y_train, x_test, y_test)
 
     if use_plot:
         for i,v in enumerate(xnames):

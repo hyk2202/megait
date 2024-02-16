@@ -1,6 +1,6 @@
 from pandas import DataFrame
 import scipy
-from scipy.stats import shapiro, normaltest, bartlett, levene, ttest_1samp, ttest_ind, ttest_rel, mannwhitneyu, pearsonr
+from scipy.stats import shapiro, normaltest, bartlett, levene, ttest_1samp, ttest_ind, ttest_rel, mannwhitneyu, pearsonr, spearmanr
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
 from pingouin import anova
@@ -9,6 +9,7 @@ from statsmodels.sandbox.stats.multicomp import MultiComparison
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from pingouin import pairwise_tukey, pairwise_tests, pairwise_gameshowell
 from helper.util import my_pretty_table
+from helper.plot import my_heatmap
 
 def my_normal_test(data: DataFrame, method: str = "n") -> None:
     """데이터프레임 내의 모든 컬럼에 대해 정규성 검정을 수행하고 결과를 출력한다.
@@ -235,7 +236,7 @@ def my_ttest_rel(data: DataFrame, xname: str, yname: str, equal_var: bool = True
     rdf = DataFrame(result).set_index(["test", "alternative"])
     my_pretty_table(rdf)
     
-def my_anova(data: DataFrame, target: str, hue, equal_var: bool = True) -> None:
+def my_anova(data: DataFrame, target: str, hue: any, equal_var: bool = True) -> None:
     """분산분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -247,52 +248,104 @@ def my_anova(data: DataFrame, target: str, hue, equal_var: bool = True) -> None:
     
     # 일원 분산 분석 명목형 파라미터 정리
     if type(hue) == str or type(hue) == list and len(hue) == 1:
-        if (type(hue) == list):
-            hue = hue[0]
-    
-    # pingouin 패키지를 사용하는 경우
-    if equal_var:
-        print("pingouin.anova")
-        aov = anova(data=data, dv=target, between=hue, detailed=True)
-    else:
-        print("pingouin.welch_anova")
-        aov = welch_anova(data=data, dv=target, between=hue)
-    my_pretty_table(aov)
-    
-    # statsmodels 패키지를 사용하는 경우
-    # 일원 분산 분석
-    if type(hue) == str or type(hue) == list and len(hue) == 1:            
+        anova_type = "oneway"
         expr = f'{target} ~ C({hue})'
         typ = 1
+        if (type(hue) == list):
+            hue = hue[0]
     # 이원 분산 분석 -> type(hue) == list and len(hue) > 1:
     else:
+        anova_type = "twoway"
         expr = f'{target} ~ '
         for i, h in enumerate(hue):
             expr += f'C({h})'
             if i + 1 < len(hue):
                 expr += '*'
         typ = 2
-    
+    # pingouin 패키지를 사용하는 경우
     if equal_var:
-        print("statsmodels.anova.anova_lm")  
-        lm = ols(expr, data=data).fit()
+        # 등분산성을 충족하는 경우에 대해서는 oneway, twoway 분석 모두 지원
+        print("pingouin.anova")
+        aov = anova(data=data, dv=target, between=hue, detailed=True)
+        my_pretty_table(aov)
+    else:
+        # 등분산성을 충족하지 않는 경우에 대해서는 oneway 분석만 지원
+        if anova_type == "oneway":
+            print("pingouin.welch_anova")
+            aov = welch_anova(data=data, dv=target, between=hue)
+            my_pretty_table(aov)
+    
+    # statsmodels 패키지를 사용하는 경우
+    print("\nstatsmodels.anova.anova_lm")  
+    lm = ols(expr, data=data).fit()
+    if equal_var:
         anova_result = anova_lm(lm, typ=typ)
-        my_pretty_table(anova_result)
-        s = anova_result['F'][0]
-        p = anova_result['PR(>F)'][0]
-        print(f"\n[anova_lm] statistic: {s:.3f}, p-value: {p:.3f}, {"대립" if p <= 0.05 else "귀무"}가설 채택")
+    else:
+        anova_result = anova_lm(lm, typ=typ, robust="hc3")
+    my_pretty_table(anova_result)
+    
+    s = anova_result['F'][0]
+    p = anova_result['PR(>F)'][0]
+    print(f"[anova_lm] statistic: {s:.3f}, p-value: {p:.3f}, {'대립' if p <= 0.05 else '귀무'}가설 채택")
+    
+    # 일원 분산 분석인 경우 사후검정 수행
+    if anova_type == "oneway":
+        # 등분산인 경우
+        if equal_var:
+            cnt = data[[target, hue]].groupby(hue).count()
+            
+            # 샘플수가 같은 경우 투키 방법
+            if cnt.iloc[0, 0] == cnt[cnt.columns[0]].mean():
+                print("\n사후검정: Tukey HSD 방법")
+                mc = MultiComparison(data[target], data[hue])
+                result = mc.tukeyhsd()
+                print(result)
+            # 샘플수가 다른 경우 본페로니 방법
+            else:
+                print("\n사후검정: 본페로니 방법")
+                result = pairwise_tests(data=data, dv=target, between=hue, padjust='bonf')
+                my_pretty_table(result)
+        
+        # 등분산이 아닌 경우 -> gameshowell
+        else:
+            print("\n사후검정: Games-Howell 방법")
+            result = pairwise_gameshowell(data=data, dv=target, between=hue)
+            my_pretty_table(result)
    
-def my_correlation(data: DataFrame) -> None:
+def my_correlation(data: DataFrame, method: str = "p", heatmap: bool = True, figsize: list=(10, 8), dpi: int=150) -> None:
     """데이터프레임 내에 있는 모든 컬럼들에 대해 상관계수를 계산하고 결과를 출력한다.
 
     Args:
         data (DataFrame): 데이터프레임 객체
+        method (str, optional): 상관계수 계산 방법(p=pearson, s=spearman). Defaults to "p".
+        heatmap (bool, optional): 상관계수 히트맵 출력 여부. Defaults to True.
+        figsize (list, optional): 히트맵의 크기. Defaults to (10, 8).
+        dpi (int, optional): 히트맵의 해상도. Defaults to 150.
     """
-    print(data.corr())
+    if heatmap:
+        my_heatmap(data.corr(method="pearson" if method == "p" else "spearman"), figsize=figsize, dpi=dpi)
+    else:
+        my_pretty_table(data.corr(method="pearson" if method == "p" else "spearman"))
+    
+    result = []
     
     for c in data.columns:
         for d in data.columns:
             if c != d:
-                s, p = pearsonr(data[c], data[d])
-                print(f"[{c} vs {d}] correlation: {s:.3f}, p-value: {p:.3f}, 상관성 {"있음" if p <= 0.05 else "없음"}")
+                if method == 'p':
+                    s, p = pearsonr(data[c], data[d])
+                else:
+                    s, p = spearmanr(data[c], data[d])
+                    
+                result.append({
+                    "field1": c,
+                    "field2": d,
+                    "correlation": s,
+                    "p-value": p,
+                    "result": p <= 0.05
+                })
+                
+    rdf = DataFrame(result)
+    rdf.set_index(["field1", "field2"], inplace=True)
+    my_pretty_table(rdf)
 
