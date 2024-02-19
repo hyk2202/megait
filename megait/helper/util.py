@@ -40,6 +40,41 @@ def my_read_excel(path: str, index_col: str=None, info: bool = True) -> DataFram
 
     return data
 
+def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
+    """데이터프레임의 연속형 변수에 대해 표준화를 수행한다.
+
+    Args:
+        data (DataFrame): 데이터프레임 객체
+        yname (str, optional): 종속변수의 컬럼명. Defaults to None.
+        
+    Returns:
+        DataFrame: 표준화된 데이터프레임
+    """
+    
+    df = data.copy()
+    
+    if yname:
+        y = df[yname]
+        df = df.drop(yname, axis=1)
+        
+    category_fields = []
+    for f in df.columns:
+        if df[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
+            category_fields.append(f)
+    
+    cate = df[category_fields]
+    df = df.drop(category_fields, axis=1)
+    
+    scaler = StandardScaler()
+    std_df = DataFrame(scaler.fit_transform(df), index=data.index, columns=df.columns)
+    
+    if category_fields:
+        std_df[category_fields] = cate
+        
+    std_df[yname] = y
+    
+    return std_df
+
 def my_train_test_split(data : DataFrame, yname : str = 'y', test_size : float = 0.3, random_state : int = 123, scalling : bool = False) -> tuple:
    '''데이터프레임을 학습용 데이터와 테스트용 데이터로 나눈다.
 
