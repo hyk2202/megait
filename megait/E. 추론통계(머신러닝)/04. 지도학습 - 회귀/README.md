@@ -97,3 +97,17 @@ $Weight = a + b \times Height$
 - 그래디언트 부스팅 회귀 (Gradient Boosting Regression)
 
 > 제공되는 모든 모형에 대한 코드를 작성하고 결과를 비교하여 가장 좋은 결과를 만들어내는 모형을 채택해야 한다.
+
+## 선형회귀 Kaggle 데이터 셋
+
+### [1] 월마트 판매
+
+주요 소매업체의 매출에 영향을 미칠 수 있는 요소 찾기
+
+https://www.kaggle.com/datasets/mikhail1681/walmart-sales
+
+### [2] 중고차 가격 데이터세트
+
+중고차 가격 예측을 위한 데이터 세트
+
+https://www.kaggle.com/datasets/rishabhkarn/used-car-dataset
