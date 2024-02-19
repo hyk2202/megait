@@ -1,8 +1,8 @@
 import numpy as np
 import seaborn as sb
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
-from tabulate import tabulate        
+from tabulate import tabulate
 from pandas import DataFrame, Series
 
 from sklearn.linear_model import LinearRegression
@@ -11,11 +11,13 @@ from sklearn.preprocessing import StandardScaler
 
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.api import het_breuschpagan
 
-from scipy.stats import t, f 
+from scipy.stats import t, f
 from helper.util import my_pretty_table
+from helper.plot import my_residplot, my_qqplot
 
-def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFrame, y_test : Series, use_plot : bool = True, report=True) -> LinearRegression :
+def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFrame, y_test : Series, use_plot : bool = True, report=True, resid_test = False, figsize=(10, 5), dpi=200) -> LinearRegression :
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -24,6 +26,10 @@ def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFra
         x_test (DataFrame): 독립변수에 대한 검증 데이터
         y_test (Series): 종속변수에 대한 검증 데이터
         use_plot (bool, optional): 시각화 여부. Defaults to True.
+        report (bool, optional): 회귀분석 결과를 보고서로 출력할지 여부. Defaults to True.
+        resid_test (bool, optional): 잔차의 가정을 확인할지 여부. Defaults to False.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 200.
 
     Returns:
         LinearRegression: 회귀분석 모델
@@ -70,7 +76,7 @@ def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFra
 
     if use_plot:
         for i,v in enumerate(xnames):
-            fig, ax = plt.subplots(1, 2, figsize=(15, 4), dpi=150)
+            fig, ax = plt.subplots(1, 2, figsize=(figsize[0]*2,figsize[1]), dpi=dpi)
             fig.subplots_adjust(hspace=0.3)
             for j,w in enumerate(target):
                 sb.regplot(x=w[0][v], y=w[1], ci=95, ax=ax[j], label='관측치')
@@ -81,6 +87,24 @@ def my_linear_regrassion(x_train : DataFrame, y_train : Series, x_test : DataFra
 
             plt.show()
             plt.close()
+    
+        # 잔차 가정 확인  
+    if resid_test:
+        print("\n\n[훈련데이터에 대한 잔차의 가정 확인] ==============================")
+        my_resid_test(x_train, y_train, y_train_pred, figsize=figsize, dpi=dpi)
+        
+        print("\n\n[검증데이터에 대한 잔차의 가정 확인] ==============================")
+        my_resid_test(x_test, y_test, y_test_pred, figsize=figsize, dpi=dpi)
+
+    # 도출된 결과를 회귀모델 객체에 포함시킴
+    fit.x_train = x_train
+    fit.y_train = y_train
+    fit.x_test = x_test
+    fit.y_test = y_test
+    fit.y_train_pred = y_train_pred
+    fit.y_test_pred = y_test_pred
+    fit.train_resid = y_train - y_train_pred
+    fit.test_resid = y_test - y_test_pred
 
     return fit
 
@@ -194,4 +218,94 @@ def my_linear_regrassion_report(fit : LinearRegression, x_train : DataFrame, y_t
             print(s)
             
         print("")
+
+    # 도출된 결과를 회귀모델 객체에 포함시킴 --> 객체 타입의 파라미터는 참조변수로 전달되므로 fit 객체에 포함된 결과값들은 이 함수 외부에서도 사용 가능하다.
+    fit.r2 = r2
+    fit.adj_r2 = adj_r2
+    fit.f_statistic = f_statistic
+    fit.p = p
+    fit.dw = dw
         
+def my_resid_normality(y: Series, y_pred: Series) -> None:
+    """MSE값을 이용하여 잔차의 정규성 가정을 확인한다.
+
+    Args:
+        y (Series): 종속변수
+        y_pred (Series): 예측값
+    """
+    mse = mean_squared_error(y, y_pred)
+    resid = y - y_pred
+    mse_sq = np.sqrt(mse)
+
+    r1 = resid[ (resid > -mse_sq) & (resid < mse_sq)].count() / resid.count() * 100
+    r2 = resid[ (resid > -2*mse_sq) & (resid < 2*mse_sq)].count() / resid.count() * 100
+    r3 = resid[ (resid > -3*mse_sq) & (resid < 3*mse_sq)].count() / resid.count() * 100
+
+    mse_r = [r1, r2, r3]
+    
+    print(f"루트 1MSE 구간에 포함된 잔차 비율: {r1:1.2f}% ({r1-68})")
+    print(f"루트 2MSE 구간에 포함된 잔차 비율: {r2:1.2f}% ({r2-95})")
+    print(f"루트 3MSE 구간에 포함된 잔차 비율: {r3:1.2f}% ({r3-99})")
+    
+    normality = r1 >= 68 and r2 >= 95 and r3 >= 99
+    print(f"잔차의 정규성 가정 충족 여부: {normality}")
+
+def my_resid_equal_var(x: DataFrame, y: Series, y_pred: Series) -> None:
+    """잔차의 등분산성 가정을 확인한다.
+
+    Args:
+        x (DataFrame): 독립변수
+        y (Series): 종속변수
+        y_pred (Series): 예측값
+    """
+    # 독립변수 데이터 프레임 복사
+    x_copy = x.copy()
+    
+    # 상수항 추가
+    x_copy.insert(0, "const", 1)
+    
+    # 잔차 구하기
+    resid = y - y_pred
+    
+    # 등분산성 검정
+    bs_result = het_breuschpagan(resid, x_copy)
+    bs_result_df = DataFrame(bs_result, columns=['values'], index=['statistic', 'p-value', 'f-value', 'f p-value'])
+
+    print(f"잔차의 등분산성 가정 충족 여부: {bs_result[1] > 0.05}")
+    my_pretty_table(bs_result_df)
+
+def my_resid_independence(y: Series, y_pred: Series) -> None:
+    """잔차의 독립성 가정을 확인한다.
+
+    Args:
+        y (Series): 종속변수
+        y_pred (Series): 예측값
+    """
+    dw = durbin_watson(y - y_pred)
+    print(f"Durbin-Watson: {dw}, 잔차의 독립성 가정 만족 여부: {1.5 < dw < 2.5}")
+    
+def my_resid_test(x: DataFrame, y: Series, y_pred: Series, figsize: tuple=(10, 4), dpi: int=150) -> None:
+    """잔차의 가정을 확인한다.
+
+    Args:
+        x (Series): 독립변수
+        y (Series): 종속변수
+        y_pred (Series): 예측값
+    """
+
+    # 잔차 생성
+    resid = y - y_pred
+    
+    print("[잔차의 선형성 가정]")
+    my_residplot(y, y_pred, lowess=True, figsize=figsize, dpi=dpi)
+    
+    print("\n[잔차의 정규성 가정]")
+    my_qqplot(y, figsize=figsize, dpi=dpi)
+    my_residplot(y, y_pred, mse=True, figsize=figsize, dpi=dpi)
+    my_resid_normality(y, y_pred)
+    
+    print("\n[잔차의 등분산성 가정]")
+    my_resid_equal_var(x, y, y_pred)
+    
+    print("\n[잔차의 독립성 가정]")
+    my_resid_independence(y, y_pred)

@@ -18,6 +18,8 @@ from scipy.stats import t
 from pandas import DataFrame
 from scipy.spatial import ConvexHull
 from statannotations.Annotator import Annotator
+from scipy.stats import zscore, probplot
+from sklearn.metrics import mean_squared_error
 
 def my_boxplot(df: DataFrame, orient : str = 'v', hue=None, figsize: tuple = (10, 4), dpi: int = 150, plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None) -> None:
     """데이터프레임 내의 모든 컬럼에 대해 상자그림을 그려서 분포를 확인한다.
@@ -378,3 +380,83 @@ def my_pvalue1_anotation(data : DataFrame, target: str, hue: str, pairs: list, t
     plt.show()
     plt.close()
 
+def my_resid_histplot(y: np.ndarray, y_pred: np.ndarray, bins = 'auto', kde: bool = True, palette: str = None, figsize: tuple=(10, 4), dpi: int=150) -> None:
+    """예측값과 잔차를 히스토그램으로 출력한다.
+
+    Args:
+        y (np.ndarray): 종속변수에 대한 관측치
+        y_pred (np.ndarray): 종속변수에 대한 예측치
+        bins (_type_, optional): 히스토그램의 구간 수 혹은 리스트. Defaults to auto.
+        kde (bool, optional): 커널밀도추정을 함께 출력할지 여부. Defaults to True.
+        palette (str, optional): 색상 팔레트. Defaults to None.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
+    """
+    resid = y - y_pred
+    resid_df = DataFrame({"resid": resid}).reset_index(drop=True)
+    my_histplot(resid_df, xname="resid", bins=bins, figsize=figsize, dpi=dpi)  
+    
+def my_residplot(y, y_pred, lowess: bool = False, mse: bool = False, figsize: tuple=(10, 4), dpi: int=150) -> None:
+    """예측값과 잔차를 그래프로 출력한다.
+
+    Args:
+        y (_type_): 종속변수에 대한 관측치
+        y_pred (_type_): 종속변수에 대한 예측치
+        lowess (bool, optional): 로우에스티메이션을 사용할지 여부(잔차의 선형성 확인). Defaults to False.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
+    """
+    resid = y - y_pred
+    plt.figure(figsize=figsize, dpi=dpi)
+    sb.residplot(x=y_pred, y=resid, lowess=lowess, line_kws={'color': 'red', 'linewidth': 1}, scatter_kws = {'edgecolor':"white", "alpha":0.7})
+    
+    if mse:
+        mse = mean_squared_error(y, y_pred)
+        mse_sq = np.sqrt(mse)
+
+        r1 = resid[ (resid > -mse_sq) & (resid < mse_sq)].count() / resid.count() * 100
+        r2 = resid[ (resid > -2*mse_sq) & (resid < 2*mse_sq)].count() / resid.count() * 100
+        r3 = resid[ (resid > -3*mse_sq) & (resid < 3*mse_sq)].count() / resid.count() * 100
+
+        mse_r = [r1, r2, r3]
+        
+        for i, c in enumerate(['red', 'green', 'black']):
+            plt.axhline(mse_sq * (i+1), color=c, linestyle='--', linewidth=0.5)
+            plt.axhline(mse_sq * (-(i+1)), color=c, linestyle='--', linewidth=0.5)
+
+        # 현재 표시되는 그래프의 x축 범위를 가져온다.
+        xmin, xmax = plt.xlim()
+
+        target = [68,95,99]
+        for i, c in enumerate(['red', 'green', 'black']):
+            if i:
+                plt.text(s=r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=(i+1)*mse_sq, color=c)
+                plt.text(s="-"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=-(i+1)*mse_sq, color=c)
+            else:
+                plt.text(s=f"{i+1}"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=(i+1)*mse_sq, color=c)
+                plt.text(s=f"-{i+1}"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=-(i+1)*mse_sq, color=c)
+    else:
+        plt.grid()
+        
+    plt.show()
+    plt.close()
+        
+def my_qqplot(y_pred: np.ndarray, figsize: tuple=(10, 4), dpi: int=150) -> None:
+    """QQ플롯을 출력한다.
+
+    Args:
+        y_pred (np.ndarray): 종속변수에 대한 예측치
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
+    """
+    plt.figure(figsize=figsize, dpi=dpi)
+    
+    (x, y), _ = probplot(zscore(y_pred))
+    k = (max(x)+0.5).round()
+
+    sb.scatterplot(x, y)
+    sb.lineplot(x=[-k, k], y=[-k, k], color='red', linestyle='--')
+
+    plt.grid()
+    plt.show()
+    plt.close()

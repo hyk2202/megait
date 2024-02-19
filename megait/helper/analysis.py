@@ -8,7 +8,7 @@ from pingouin import welch_anova
 from statsmodels.sandbox.stats.multicomp import MultiComparison
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from pingouin import pairwise_tukey, pairwise_tests, pairwise_gameshowell
-from helper.util import my_pretty_table
+from helper.util import my_pretty_table, my_unmelt
 from helper.plot import my_heatmap
 
 def my_normal_test(data: DataFrame, method: str = "n") -> None:

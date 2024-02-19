@@ -101,7 +101,7 @@ def my_train_test_split(data : DataFrame, yname : str = 'y', test_size : float =
 
    return (x_train, x_test, y_train, y_test)
 
-def set_category(data : DataFrame, *args : str) -> DataFrame:
+def my_set_category(data : DataFrame, *args : str) -> DataFrame:
     """카테고리 데이터를 설정한다.
 
     Args:
@@ -138,7 +138,7 @@ def my_unmelt(data: DataFrame, id_vars: str ='class', value_vars: str='values') 
         
     return DataFrame(mydict)
 
-def replace_missing_value(data: DataFrame, strategy: str = 'mean', fill_value : any = None) -> DataFrame:
+def my_replace_missing_value(data: DataFrame, strategy: str = 'mean', fill_value : any = None) -> DataFrame:
     """결측치를 대체하여 데이터프레임을 재구성한다.
 
     Args:
@@ -158,7 +158,7 @@ def replace_missing_value(data: DataFrame, strategy: str = 'mean', fill_value : 
     # 2차원 배열을 데이터프레임으로 변환 후 리턴
     return DataFrame(df_imr, index=data.index, columns=data.columns)
     
-def get_outlier_table(data: DataFrame, *fields: str) -> DataFrame:
+def my_get_outlier_table(data: DataFrame, *fields: str) -> DataFrame:
     """데이터프레임의 사분위수와 결측치 경계값을 구한다.
     함수 호출 전 상자그림을 통해 결측치가 확인된 필드에 대해서만 처리하는 것이 좋다.
 
@@ -202,7 +202,7 @@ def get_outlier_table(data: DataFrame, *fields: str) -> DataFrame:
         
     return DataFrame(result).set_index('FIELD')
 
-def replace_outliner(data: DataFrame, *fields: str) -> DataFrame:
+def my_replace_outliner(data: DataFrame, *fields: str) -> DataFrame:
     """이상치 경계값을 넘어가는 데이터를 경계값으로 대체한다.
 
     Args:
@@ -226,7 +226,7 @@ def replace_outliner(data: DataFrame, *fields: str) -> DataFrame:
         
     return df
 
-def replace_outliner_to_nan(data: DataFrame, *fields: str) -> DataFrame:
+def my_replace_outliner_to_nan(data: DataFrame, *fields: str) -> DataFrame:
     """이상치를 결측치로 대체한다.
 
     Args:
@@ -250,7 +250,7 @@ def replace_outliner_to_nan(data: DataFrame, *fields: str) -> DataFrame:
         
     return df
 
-def replace_outliner_to_mean(data: DataFrame, *fields: str) -> DataFrame:
+def my_replace_outliner_to_mean(data: DataFrame, *fields: str) -> DataFrame:
     """이상치를 평균값으로 대체한다.
 
     Args:
