@@ -236,7 +236,7 @@ def my_ttest_rel(data: DataFrame, xname: str, yname: str, equal_var: bool = True
     rdf = DataFrame(result).set_index(["test", "alternative"])
     my_pretty_table(rdf)
     
-def my_anova(data: DataFrame, target: str, hue: any, equal_var: bool = True) -> None:
+def my_anova(data: DataFrame, target: str, hue: any, equal_var: bool = True, post : bool = False) -> None:
     """분산분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -244,6 +244,7 @@ def my_anova(data: DataFrame, target: str, hue: any, equal_var: bool = True) -> 
         target (str): 종속변수의 컬럼명
         hue (_type_): 명목형 변수의 컬럼명을 저장하고 있는 리스트
         equal_var (bool, optional): 등분산성 가정 여부. Defaults to True.
+        post (bool, optional): 사후검정 여부, Defaults to False
     """
     
     # 일원 분산 분석 명목형 파라미터 정리
@@ -289,7 +290,7 @@ def my_anova(data: DataFrame, target: str, hue: any, equal_var: bool = True) -> 
     print(f"[anova_lm] statistic: {s:.3f}, p-value: {p:.3f}, {'대립' if p <= 0.05 else '귀무'}가설 채택")
     
     # 일원 분산 분석인 경우 사후검정 수행
-    if anova_type == "oneway":
+    if post and anova_type == "oneway":
         # 등분산인 경우
         if equal_var:
             cnt = data[[target, hue]].groupby(hue).count()

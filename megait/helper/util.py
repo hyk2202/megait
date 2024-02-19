@@ -1,3 +1,5 @@
+from os.path import exists
+from os import mkdir
 import numpy as np
 from tabulate import tabulate
 from pandas import DataFrame, read_excel
@@ -5,17 +7,18 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 
+
 def my_pretty_table(data: DataFrame) -> None:
     print(tabulate(data, headers='keys', tablefmt='psql',showindex=True, numalign="right"))
 
-def my_read_excel(path: str, index_col: str=None, info: bool = True) -> DataFrame:
+def my_read_excel(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
     """엑셀 파일을 데이터 프레임으로 로드하고 정보를 출력한다
     
     Args:
         path (str): 엑셀 파일의 경로 (혹은 URL)
         index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
-        info (bool, optional) : True일 경우 정부 정보 출력. Defaults to True.
-
+        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
     Returns:
         DataFrame : 데이터프레임 객체
     """
@@ -23,7 +26,10 @@ def my_read_excel(path: str, index_col: str=None, info: bool = True) -> DataFram
         data : DataFrame = read_excel(path, index_col = index_col)
     else:
         data : DataFrame = read_excel(path)
-    
+    if save: 
+        if not exists('res'): mkdir('res')
+        data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
+
     if info:
         print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
 
