@@ -50,13 +50,15 @@ def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
     Returns:
         DataFrame: 표준화된 데이터프레임
     """
-    
+    # 원본 데이터 프레임 복사
     df = data.copy()
-    
+     
+    # 종속변수만 별도로 분리
     if yname:
         y = df[yname]
         df = df.drop(yname, axis=1)
-        
+
+    # 카테고리 타입만 골라냄    
     category_fields = []
     for f in df.columns:
         if df[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
@@ -65,12 +67,15 @@ def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
     cate = df[category_fields]
     df = df.drop(category_fields, axis=1)
     
+    # 표준화 수행
     scaler = StandardScaler()
     std_df = DataFrame(scaler.fit_transform(df), index=data.index, columns=df.columns)
     
+    # 분리했던 명목형 변수를 다시 결합
     if category_fields:
         std_df[category_fields] = cate
-        
+    
+    # 분리했던 종속변수 결합
     std_df[yname] = y
     
     return std_df
@@ -158,7 +163,7 @@ def my_replace_missing_value(data: DataFrame, strategy: str = 'mean', fill_value
     # 2차원 배열을 데이터프레임으로 변환 후 리턴
     return DataFrame(df_imr, index=data.index, columns=data.columns)
     
-def my_get_outlier_table(data: DataFrame, *fields: str) -> DataFrame:
+def my_outlier_table(data: DataFrame, *fields: str) -> DataFrame:
     """데이터프레임의 사분위수와 결측치 경계값을 구한다.
     함수 호출 전 상자그림을 통해 결측치가 확인된 필드에 대해서만 처리하는 것이 좋다.
 
@@ -213,17 +218,30 @@ def my_replace_outliner(data: DataFrame, *fields: str) -> DataFrame:
         DataFrame: 이상치가 경계값으로 대체된 데이터 프레임
     """
     
-    # 이상치 경계값을 구한다.
-    outliner_table = get_outlier_table(data, *fields)
-    
     # 원본 데이터 프레임 복사
     df = data.copy()
+    
+    # 카테고리 타입만 골라냄
+    category_fields = []
+    for f in df.columns:
+        if df[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
+            category_fields.append(f)
+    
+    cate = df[category_fields]
+    df = df.drop(category_fields, axis=1)
+    
+    # 이상치 경계값을 구한다.
+    outliner_table = my_outlier_table(df, *fields)
     
     # 이상치가 발견된 필드에 대해서만 처리
     for f in outliner_table.index:
         df.loc[df[f] < outliner_table.loc[f, 'DOWN'], f] = outliner_table.loc[f, 'DOWN']
         df.loc[df[f] > outliner_table.loc[f, 'UP'], f] = outliner_table.loc[f, 'UP']
-        
+    
+    # 분리했던 카테고리 타입을 다시 병합
+    if category_fields:
+        df[category_fields] = cate
+    
     return df
 
 def my_replace_outliner_to_nan(data: DataFrame, *fields: str) -> DataFrame:
@@ -237,17 +255,30 @@ def my_replace_outliner_to_nan(data: DataFrame, *fields: str) -> DataFrame:
         DataFrame: 이상치가 결측치로 대체된 데이터프레임
     """
     
-    # 이상치 경계값을 구한다.
-    outliner_table = get_outlier_table(data, *fields)
-    
     # 원본 데이터 프레임 복사
     df = data.copy()
+    
+    # 카테고리 타입만 골라냄
+    category_fields = []
+    for f in df.columns:
+        if df[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
+            category_fields.append(f)
+    
+    cate = df[category_fields]
+    df = df.drop(category_fields, axis=1)
+    
+    # 이상치 경계값을 구한다.
+    outliner_table = my_outlier_table(df, *fields)
     
     # 이상치가 발견된 필드에 대해서만 처리
     for f in outliner_table.index:
         df.loc[df[f] < outliner_table.loc[f, 'DOWN'], f] = np.nan
         df.loc[df[f] > outliner_table.loc[f, 'UP'], f] = np.nan
         
+    # 분리했던 카테고리 타입을 다시 병합
+    if category_fields:
+        df[category_fields] = cate
+    
     return df
 
 def my_replace_outliner_to_mean(data: DataFrame, *fields: str) -> DataFrame:
@@ -260,22 +291,29 @@ def my_replace_outliner_to_mean(data: DataFrame, *fields: str) -> DataFrame:
     Returns:
         DataFrame: 이상치가 평균값으로 대체된 데이터프레임
     """
+    # 원본 데이터 프레임 복사
+    df = data.copy()
     
-    df = replace_outliner_to_nan(data, *fields)
+    # 카테고리 타입만 골라냄
+    category_fields = []
+    for f in df.columns:
+        if df[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
+            category_fields.append(f)
     
-    if not fields:
-        fields = data.columns
+    cate = df[category_fields]
+    df = df.drop(category_fields, axis=1)
 
-    caterogy_type = []
-    for f in fields:
-        # 카테고리 타입만 골라냄
-        if data[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
-            caterogy_type.append(f)
-            
-    # 카테고리 타입을 제외한 필드에 대해서만 처리
-    df2 = df.drop(caterogy_type, axis=1)
-    df3 = replace_missing_value(df2, 'mean')
+    # 이상치를 결측치로 대체한다.
+    if not fields:
+        fields = df.columns
+        
+    df2 = my_replace_outliner_to_nan(df, *fields)
+
+    # 결측치를 평균값으로 대체한다.
+    df3 = my_replace_missing_value(df2, 'mean')
     
-    # 원래의 데이터프레임(df)에다가 결측치를 평균값으로 대체한 데이터프레임(df3)을 덮어씌움
-    df[df3.columns] = df3
-    return df
+    # 분리했던 카테고리 타입을 다시 병합
+    if category_fields:
+        df3[category_fields] = cate
+        
+    return df3
