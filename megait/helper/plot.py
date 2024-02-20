@@ -430,11 +430,11 @@ def my_residplot(y, y_pred, lowess: bool = False, mse: bool = False, figsize: tu
         target = [68,95,99]
         for i, c in enumerate(['red', 'green', 'black']):
             if i:
-                plt.text(s=r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=(i+1)*mse_sq, color=c)
-                plt.text(s="-"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=-(i+1)*mse_sq, color=c)
-            else:
                 plt.text(s=f"{i+1}"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=(i+1)*mse_sq, color=c)
                 plt.text(s=f"-{i+1}"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=-(i+1)*mse_sq, color=c)
+            else:
+                plt.text(s=r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=(i+1)*mse_sq, color=c)
+                plt.text(s="-"r'${}\sqrt{MSE}$ = %.2f%% (%.2f%%)' % (mse_r[i], mse_r[i]-target[i]), x=xmax+0.2, y=-(i+1)*mse_sq, color=c)
     else:
         plt.grid()
         
