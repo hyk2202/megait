@@ -2,7 +2,7 @@ from os.path import exists
 from os import mkdir
 import numpy as np
 from tabulate import tabulate
-from pandas import DataFrame, read_excel
+from pandas import DataFrame, read_excel, read_csv, read_json, get_dummies
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
@@ -45,6 +45,92 @@ def my_read_excel(path: str, index_col: str=None, info: bool = True, save: bool 
         my_pretty_table(data.describe())
 
     return data
+
+def my_read_csv(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
+    """csv 파일을 데이터 프레임으로 로드하고 정보를 출력한다
+    
+    Args:
+        path (str): csv파일의 경로 (혹은 URL)
+        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
+        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
+    Returns:
+        DataFrame : 데이터프레임 객체
+    """
+    if index_col:
+        data : DataFrame = read_csv(path, index_col = index_col)
+    else:
+        data : DataFrame = read_csv(path)
+    if save: 
+        if not exists('res'): mkdir('res')
+        data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
+
+    if info:
+        print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
+
+        print("\n데이터프레임 상위 5개 행",end = '\n\n')
+        my_pretty_table(data.head())
+
+        print("\n데이터프레임 하위 5개 행",end = '\n\n')
+        my_pretty_table(data.tail())
+
+        print("\n기술통계",end = '\n\n')
+        desc = data.describe().T
+        desc['nan'] = data.isnull().sum()
+        my_pretty_table(data.describe())
+
+    return data
+
+def my_read_json(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
+    """json 파일을 데이터 프레임으로 로드하고 정보를 출력한다
+    
+    Args:
+        path (str): csv파일의 경로 (혹은 URL)
+        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
+        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
+    Returns:
+        DataFrame : 데이터프레임 객체
+    """
+    if index_col:
+        data : DataFrame = read_json(path, index_col = index_col)
+    else:
+        data : DataFrame = read_json(path)
+    if save: 
+        if not exists('res'): mkdir('res')
+        data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
+
+    if info:
+        print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
+
+        print("\n데이터프레임 상위 5개 행",end = '\n\n')
+        my_pretty_table(data.head())
+
+        print("\n데이터프레임 하위 5개 행",end = '\n\n')
+        my_pretty_table(data.tail())
+
+        print("\n기술통계",end = '\n\n')
+        desc = data.describe().T
+        desc['nan'] = data.isnull().sum()
+        my_pretty_table(data.describe())
+
+    return data
+
+def my_read_data(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
+    """파일을 데이터 프레임으로 로드하고 정보를 출력한다
+    
+    Args:
+        path (str): 파일의 경로 (혹은 URL)
+        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
+        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
+    Returns:
+        DataFrame : 데이터프레임 객체
+    """
+    type = path[path.rfind('.')+1:]
+    if type == 'csv' : return my_read_csv(path=path, index_col = index_col, info = info, save=save)
+    elif type == 'xlsx' : return my_read_excel(path=path, index_col = index_col, info = info, save=save)
+    elif type == 'json' : return  my_read_json(path=path, index_col = index_col, info = info, save=save)
 
 def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
     """데이터프레임의 연속형 변수에 대해 표준화를 수행한다.
@@ -323,3 +409,22 @@ def my_replace_outliner_to_mean(data: DataFrame, *fields: str) -> DataFrame:
         df3[category_fields] = cate
         
     return df3
+
+def my_dummies(data: DataFrame, *args: str) -> DataFrame:
+    """명목형 변수를 더미 변수로 변환한다.
+
+    Args:
+        data (DataFrame): 데이터프레임
+        *args (str): 명목형 컬럼 목록
+
+    Returns:
+        DataFrame: 더미 변수로 변환된 데이터프레임
+    """
+    if not args:
+        args = []
+        
+        for f in data.columns:
+            if data[f].dtypes == 'category':
+                args.append(f)
+                
+    return get_dummies(data, columns=args, drop_first=True)
