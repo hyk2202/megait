@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 
-
 def my_pretty_table(data: DataFrame) -> None:
     print(tabulate(data, headers='keys', tablefmt='psql',showindex=True, numalign="right"))
 
@@ -130,7 +129,6 @@ def my_read_data(path: str, index_col: str=None, info: bool = True, categories: 
     if type == 'csv' : return my_read_csv(path=path, index_col = index_col, info = info, categories=categories, save=save)
     elif type in ['xlsx','xls'] : return my_read_excel(path=path, index_col = index_col, info = info, categories=categories, save=save)
     
-
 def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
     """데이터프레임의 연속형 변수에 대해 표준화를 수행한다.
 
@@ -427,3 +425,33 @@ def my_dummies(data: DataFrame, *args: str) -> DataFrame:
                 args.append(f)
                 
     return get_dummies(data, columns=args, drop_first=True)
+
+def my_get_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
+    """x, y 데이터에 대한 추세선을 구한다.
+
+    Args:
+        x : 산점도 그래프에 대한 x 데이터
+        y : 산점도 그래프에 대한 y 데이터
+        degree (int, optional): 추세선 방정식의 차수. Defaults to 2.
+        value_count (int, optional): x 데이터의 범위 안에서 간격 수. Defaults to 100.
+
+    Returns:
+        tuple: (v_trend, t_trend)
+    """
+    #[ a, b, c ] ==> ax^2 + bx + c
+    coeff = np.polyfit(x, y, degree)
+    
+    if type(x) == 'list':
+        minx = min(x)
+        maxx = max(x)
+    else:
+        minx = x.min()
+        maxx = x.max()
+        
+    v_trend = np.linspace(minx, maxx, value_count)
+    
+    t_trend = coeff[-1]
+    for i in range(0, degree):
+        t_trend += coeff[i] * v_trend ** (degree - i)
+        
+    return (v_trend, t_trend)

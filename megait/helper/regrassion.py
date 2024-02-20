@@ -15,7 +15,7 @@ from statsmodels.stats.api import het_breuschpagan
 from sklearn.model_selection import GridSearchCV
 
 from scipy.stats import t, f
-from helper.util import my_pretty_table
+from helper.util import my_pretty_table, my_get_trend
 from helper.plot import my_residplot, my_qqplot
 
 def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
@@ -120,8 +120,18 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     if use_plot:
         for i, v in enumerate(xnames):
             plt.figure(figsize=figsize, dpi=dpi)
-            sb.regplot(x=x[v], y=y, ci=95, label='관측치')
-            sb.regplot(x=x[v], y=y_pred, ci=0, label='추정치')
+            # sb.regplot(x=x[v], y=y, ci=95, label='관측치')
+            # sb.regplot(x=x[v], y=y_pred, ci=0, label='추정치')
+            sb.scatterplot(x=x[v], y=y, label='관측치')
+            sb.scatterplot(x=x[v], y=y_pred, label='추정치')
+            
+            t1 = my_get_trend(x[v], y)
+            sb.lineplot(x=t1[0], y=t1[1], color='blue', linestyle='--', alpha=0.5)
+            
+            t2 = my_get_trend(x[v], y_pred)
+            sb.lineplot(x=t2[0], y=t2[1], color='red', linestyle='--', alpha=0.7)
+            
+
             plt.title(f"{yname} vs {v}")
             plt.legend()
             plt.grid()
