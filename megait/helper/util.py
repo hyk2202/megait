@@ -11,112 +11,111 @@ from sklearn.impute import SimpleImputer
 def my_pretty_table(data: DataFrame) -> None:
     print(tabulate(data, headers='keys', tablefmt='psql',showindex=True, numalign="right"))
 
-def my_read_excel(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
-    """엑셀 파일을 데이터 프레임으로 로드하고 정보를 출력한다
-    
+def my_read_excel(path: str, index_col: str = None, info: bool = True, categories: list = None, save: bool = False) -> DataFrame:
+    """엑셀 파일을 데이터프레임으로 로드하고 정보를 출력한다.
+
     Args:
-        path (str): 엑셀 파일의 경로 (혹은 URL)
-        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
-        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        path (str): 엑셀 파일의 경로(혹은 URL)
+        index_col (str, optional): 인덱스 필드의 이름. Defaults to None.
+        info (bool, optional): True일 경우 정보 출력. Defaults to True.
+        categories (list, optional): 카테고리로 지정할 필드 목록. Defaults to None.
         save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
     Returns:
-        DataFrame : 데이터프레임 객체
+        DataFrame: 데이터프레임 객체
     """
-    if index_col:
-        data : DataFrame = read_excel(path, index_col = index_col)
-    else:
-        data : DataFrame = read_excel(path)
+
+    try:
+        if index_col:
+            data: DataFrame = read_excel(path, index_col=index_col)
+        else:
+            data: DataFrame = read_excel(path)
+    except Exception as e:
+        print("\x1b[31m데이터를 로드하는데 실패했습니다.\x1b[0m")
+        print(f"\x1b[31m{e}\x1b[0m")
+        return None
     if save: 
         if not exists('res'): mkdir('res')
         data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
+    if categories:
+        data = my_set_category(data, *categories)
 
     if info:
-        print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
+        print(data.info())
 
-        print("\n데이터프레임 상위 5개 행",end = '\n\n')
+        print("\n데이터프레임 상위 5개 행")
         my_pretty_table(data.head())
 
-        print("\n데이터프레임 하위 5개 행",end = '\n\n')
+        print("\n데이터프레임 하위 5개 행")
         my_pretty_table(data.tail())
 
-        print("\n기술통계",end = '\n\n')
+        print("\n기술통계")
         desc = data.describe().T
         desc['nan'] = data.isnull().sum()
-        my_pretty_table(data.describe())
+        my_pretty_table(desc)
+        
+    if categories:
+        print("\n카테고리 정보")
+        for c in categories:
+            my_pretty_table(DataFrame(data[c].value_counts(), columns=[c]))
 
     return data
 
-def my_read_csv(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
-    """csv 파일을 데이터 프레임으로 로드하고 정보를 출력한다
-    
+def my_read_csv(path: str, index_col: str = None, info: bool = True, categories: list = None, save: bool = False) -> DataFrame:
+    """csv 파일을 데이터프레임으로 로드하고 정보를 출력한다.
+
     Args:
-        path (str): csv파일의 경로 (혹은 URL)
-        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
-        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
+        path (str): 엑셀 파일의 경로(혹은 URL)
+        index_col (str, optional): 인덱스 필드의 이름. Defaults to None.
+        info (bool, optional): True일 경우 정보 출력. Defaults to True.
+        categories (list, optional): 카테고리로 지정할 필드 목록. Defaults to None.
         save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
     Returns:
-        DataFrame : 데이터프레임 객체
+        DataFrame: 데이터프레임 객체
     """
-    if index_col:
-        data : DataFrame = read_csv(path, index_col = index_col)
-    else:
-        data : DataFrame = read_csv(path)
+
+    try:
+        if index_col:
+            data: DataFrame = read_csv(path, index_col=index_col)
+        else:
+            data: DataFrame = read_csv(path)
+    except:
+        try:
+            if index_col:
+                data: DataFrame = read_csv(path, index_col=index_col, encoding = 'cp949', encoding_errors='ignore')
+            else:
+                data: DataFrame = read_csv(path, encoding = 'cp949', encoding_errors='ignore')
+        except Exception as e:
+            print("\x1b[31m데이터를 로드하는데 실패했습니다.\x1b[0m")
+            print(f"\x1b[31m{e}\x1b[0m")
+            return None
     if save: 
         if not exists('res'): mkdir('res')
         data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
+    if categories:
+        data = my_set_category(data, *categories)
 
     if info:
-        print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
+        print(data.info())
 
-        print("\n데이터프레임 상위 5개 행",end = '\n\n')
+        print("\n데이터프레임 상위 5개 행")
         my_pretty_table(data.head())
 
-        print("\n데이터프레임 하위 5개 행",end = '\n\n')
+        print("\n데이터프레임 하위 5개 행")
         my_pretty_table(data.tail())
 
-        print("\n기술통계",end = '\n\n')
+        print("\n기술통계")
         desc = data.describe().T
         desc['nan'] = data.isnull().sum()
-        my_pretty_table(data.describe())
+        my_pretty_table(desc)
+        
+    if categories:
+        print("\n카테고리 정보")
+        for c in categories:
+            my_pretty_table(DataFrame(data[c].value_counts(), columns=[c]))
 
     return data
 
-def my_read_json(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
-    """json 파일을 데이터 프레임으로 로드하고 정보를 출력한다
-    
-    Args:
-        path (str): csv파일의 경로 (혹은 URL)
-        index_col (str, optional) : 인덱스 필드의 이름. Defaults to None.
-        info (bool, optional) : True일 경우 정보 출력. Defaults to True.
-        save (bool, optional) : True일 경우 데이터프레임 저장. Defaults to False.
-    Returns:
-        DataFrame : 데이터프레임 객체
-    """
-    if index_col:
-        data : DataFrame = read_json(path, index_col = index_col)
-    else:
-        data : DataFrame = read_json(path)
-    if save: 
-        if not exists('res'): mkdir('res')
-        data.to_excel(f'./res/{path[1+path.rfind("/"):]}')
-
-    if info:
-        print("데이터프레임 크기: 행 수: {0}, 열 수: {1}".format(data.shape[0], data.shape[1]),end = '\n')
-
-        print("\n데이터프레임 상위 5개 행",end = '\n\n')
-        my_pretty_table(data.head())
-
-        print("\n데이터프레임 하위 5개 행",end = '\n\n')
-        my_pretty_table(data.tail())
-
-        print("\n기술통계",end = '\n\n')
-        desc = data.describe().T
-        desc['nan'] = data.isnull().sum()
-        my_pretty_table(data.describe())
-
-    return data
-
-def my_read_data(path: str, index_col: str=None, info: bool = True, save: bool = False) -> DataFrame:
+def my_read_data(path: str, index_col: str=None, info: bool = True, categories: list = None, save: bool = False) -> DataFrame:
     """파일을 데이터 프레임으로 로드하고 정보를 출력한다
     
     Args:
@@ -128,9 +127,9 @@ def my_read_data(path: str, index_col: str=None, info: bool = True, save: bool =
         DataFrame : 데이터프레임 객체
     """
     type = path[path.rfind('.')+1:]
-    if type == 'csv' : return my_read_csv(path=path, index_col = index_col, info = info, save=save)
-    elif type == 'xlsx' : return my_read_excel(path=path, index_col = index_col, info = info, save=save)
-    elif type == 'json' : return  my_read_json(path=path, index_col = index_col, info = info, save=save)
+    if type == 'csv' : return my_read_csv(path=path, index_col = index_col, info = info, categories=categories, save=save)
+    elif type in ['xlsx','xls'] : return my_read_excel(path=path, index_col = index_col, info = info, categories=categories, save=save)
+    
 
 def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
     """데이터프레임의 연속형 변수에 대해 표준화를 수행한다.
