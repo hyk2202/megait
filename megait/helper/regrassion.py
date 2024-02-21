@@ -15,10 +15,10 @@ from statsmodels.stats.api import het_breuschpagan
 from sklearn.model_selection import GridSearchCV
 
 from scipy.stats import t, f
-from helper.util import my_pretty_table, my_get_trend
+from helper.util import my_pretty_table, my_trend
 from helper.plot import my_residplot, my_qqplot
 
-def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
+def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -27,6 +27,7 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
         x_test (DataFrame): 독립변수에 대한 검증 데이터. Defaults to None.
         y_test (Series): 종속변수에 대한 검증 데이터. Defaults to None.
         cv (int, optional): 교차검증 횟수. Defaults to 0.
+        degree (int, optional): 다항회귀분석의 차수. Defaults to 1.
         use_plot (bool, optional): 시각화 여부. Defaults to True.
         report (bool, optional): 회귀분석 결과를 보고서로 출력할지 여부. Defaults to True.
         resid_test (bool, optional): 잔차의 가정을 확인할지 여부. Defaults to False.
@@ -70,19 +71,20 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
     print(expr, end="\n\n")
 
     if x_test is not None and y_test is not None:
-        my_linear_regrassion_result(fit, x_test, y_test, use_plot, report, resid_test, figsize, dpi)
+        my_linear_regrassion_result(fit, x_test, y_test, degree, use_plot, report, resid_test, figsize, dpi)
     else:
-        my_linear_regrassion_result(fit, x_train, y_train, use_plot, report, resid_test, figsize, dpi)
+        my_linear_regrassion_result(fit, x_train, y_train, degree, use_plot, report, resid_test, figsize, dpi)
 
     return fit
 
-def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
+def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, degree: int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
     """선형회귀분석 결과를 출력한다.
 
     Args:
         fit (LinearRegression): 회귀분석 모델
         x (DataFrame): 독립변수
         y (Series): 종속변수
+        degree (int, optional): 다항회귀분석의 차수. Defaults to 1.
         use_plot (bool, optional): 시각화 여부. Defaults to True.
         report (bool, optional): 회귀분석 결과를 보고서로 출력할지 여부. Defaults to True.
         resid_test (bool, optional): 잔차의 가정을 확인할지 여부. Defaults to False.
@@ -120,16 +122,20 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     if use_plot:
         for i, v in enumerate(xnames):
             plt.figure(figsize=figsize, dpi=dpi)
-            # sb.regplot(x=x[v], y=y, ci=95, label='관측치')
-            # sb.regplot(x=x[v], y=y_pred, ci=0, label='추정치')
-            sb.scatterplot(x=x[v], y=y, label='관측치')
-            sb.scatterplot(x=x[v], y=y_pred, label='추정치')
-            
-            t1 = my_get_trend(x[v], y)
-            sb.lineplot(x=t1[0], y=t1[1], color='blue', linestyle='--', alpha=0.5)
-            
-            t2 = my_get_trend(x[v], y_pred)
-            sb.lineplot(x=t2[0], y=t2[1], color='red', linestyle='--', alpha=0.7)
+
+
+            if degree -1 :
+                sb.scatterplot(x=x[v], y=y, label='관측치')
+                sb.scatterplot(x=x[v], y=y_pred, label='추정치')
+                
+                t1 = my_trend(x[v], y, degree = degree)
+                sb.lineplot(x=t1[0], y=t1[1], color='blue', linestyle='--', alpha=0.5)
+                
+                t2 = my_trend(x[v], y_pred, degree = degree)
+                sb.lineplot(x=t2[0], y=t2[1], color='red', linestyle='--', alpha=0.7)
+            else:
+                sb.regplot(x=x[v], y=y, ci=95, label='관측치')
+                sb.regplot(x=x[v], y=y_pred, ci=0, label='추정치')
             
 
             plt.title(f"{yname} vs {v}")

@@ -4,7 +4,7 @@ import numpy as np
 from tabulate import tabulate
 from pandas import DataFrame, read_excel, read_csv, read_json, get_dummies
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.impute import SimpleImputer
 
 def my_pretty_table(data: DataFrame) -> None:
@@ -417,16 +417,12 @@ def my_dummies(data: DataFrame, *args: str) -> DataFrame:
     Returns:
         DataFrame: 더미 변수로 변환된 데이터프레임
     """
-    if not args:
-        args = []
-        
-        for f in data.columns:
-            if data[f].dtypes == 'category':
-                args.append(f)
+    if not args: args = [x for x in data.columns if data[x].dtypes=='category']
+    else: args = list(args)
                 
     return get_dummies(data, columns=args, drop_first=True)
 
-def my_get_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
+def my_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
     """x, y 데이터에 대한 추세선을 구한다.
 
     Args:
@@ -455,3 +451,27 @@ def my_get_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
         t_trend += coeff[i] * v_trend ** (degree - i)
         
     return (v_trend, t_trend)
+
+def my_poly_features(data: DataFrame, columns: list = [], degree:int = 2)-> DataFrame:
+    """전달된 데이터프레임에 대해서 2차항을 추가한 새로온 데이터프레임을 리턴한다.
+
+    Args:
+        data (DataFrame): 원본 데이터 프레임
+        columns (list, optional): 2차항을 생성할 필드 목록. 전달되지 않을 경우 전체 필드에 대해 처리 Default to [].
+        degree (int, optional): 차수. Default to 2
+
+    Returns:
+        DataFrame: 2차항이 추가된 새로운 데이터 프레임
+    """
+
+    df = data.copy()
+    if not columns:
+        columns=df.columns
+
+    poly = PolynomialFeatures(degree=degree, include_bias = False)
+    poly_fit = poly.fit_transform(df[columns])
+    poly_df = DataFrame(poly_fit, columns = poly.get_feature_names_out(), index = df.index)
+
+    df[poly_df.columns] = poly_df[poly_df.columns]
+
+    return df
