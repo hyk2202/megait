@@ -207,6 +207,12 @@ def my_set_category(data : DataFrame, *args : str) -> DataFrame:
     """
     df = data.copy()
 
+    if not args:
+        args = []
+        for f in data.columns:
+            if data[f].dtypes not in ['int', 'int32', 'int64', 'float', 'float32', 'float64']:
+                args.append(f)
+
     for k in args:
         df[k] = df[k].astype('category')
 

@@ -330,9 +330,9 @@ def my_correlation(data: DataFrame, method: str = "p", heatmap: bool = True, fig
     
     result = []
     
-    for c in data.columns:
-        for d in data.columns:
-            if c != d:
+    for i,c in enumerate(data.columns):
+        for j,d in enumerate(data.columns):
+            if i < j :
                 if method == 'p':
                     s, p = pearsonr(data[c], data[d])
                 else:

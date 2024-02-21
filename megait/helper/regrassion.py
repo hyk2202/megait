@@ -18,7 +18,7 @@ from scipy.stats import t, f
 from helper.util import my_pretty_table, my_trend
 from helper.plot import my_residplot, my_qqplot
 
-def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
+def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order: str = None) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -33,7 +33,7 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
         resid_test (bool, optional): 잔차의 가정을 확인할지 여부. Defaults to False.
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
-
+        order (bool, optional): 독립변수 결과 보고 표의 정렬 기준 (v, p)
     Returns:
         LinearRegression: 회귀분석 모델
     """
@@ -71,9 +71,9 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
     print(expr, end="\n\n")
 
     if x_test is not None and y_test is not None:
-        my_linear_regrassion_result(fit, x_test, y_test, degree, use_plot, report, resid_test, figsize, dpi)
+        my_linear_regrassion_result(fit, x_test, y_test, degree, use_plot, report, resid_test, figsize, dpi, order)
     else:
-        my_linear_regrassion_result(fit, x_train, y_train, degree, use_plot, report, resid_test, figsize, dpi)
+        my_linear_regrassion_result(fit, x_train, y_train, degree, use_plot, report, resid_test, figsize, dpi, order)
 
     return fit
 
@@ -116,7 +116,7 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     
     if report:
         print("")
-        my_linear_regrassion_report(fit, x, y)
+        my_linear_regrassion_report(fit, x, y, order)
         
     # 시각화
     if use_plot:
@@ -156,7 +156,7 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     fit.y_pred = y_pred
     fit.resid = y - y_pred
 
-def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: Series = None) -> None:
+def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: Series = None, order : str = None) -> None:
     """선형회귀분석 결과를 보고한다.
 
     Args:
@@ -222,7 +222,12 @@ def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: S
         "유의확률": np.round(p_values[1:], 3),
         "VIF": vif,
     })
-
+    if order:
+        order = order.upper()
+        if order == 'V':
+            result_df.sort_values('VIF',inplace=True)
+        elif  order == 'P':
+            result_df.sort_values('유의확률',inplace=True)
         #result_df
     my_pretty_table(result_df)
         
