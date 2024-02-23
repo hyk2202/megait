@@ -77,7 +77,7 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
 
     return fit
 
-def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, degree: int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150) -> LinearRegression:
+def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, degree: int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order:str = None) -> LinearRegression:
     """선형회귀분석 결과를 출력한다.
 
     Args:
