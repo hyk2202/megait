@@ -18,7 +18,7 @@ from scipy.stats import t, f
 from helper.util import my_pretty_table, my_trend
 from helper.plot import my_residplot, my_qqplot
 
-def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: DataFrame = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order: str = None) -> LinearRegression:
+def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order: str = None) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
