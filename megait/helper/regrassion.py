@@ -18,7 +18,7 @@ from scipy.stats import t, f
 from helper.util import my_pretty_table, my_trend
 from helper.plot import my_residplot, my_qqplot
 
-def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order: str = None) -> LinearRegression:
+def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 0, degree : int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order: str = None,p_value_num:float=0.05 ) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -34,6 +34,7 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
         order (bool, optional): 독립변수 결과 보고 표의 정렬 기준 (v, p)
+        p_value_num (float, optional) : 회귀모형의 유의확률. Drfaults to 0.05
     Returns:
         LinearRegression: 회귀분석 모델
     """
@@ -71,13 +72,13 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
     print(expr, end="\n\n")
 
     if x_test is not None and y_test is not None:
-        my_linear_regrassion_result(fit, x_test, y_test, degree, use_plot, report, resid_test, figsize, dpi, order)
+        my_linear_regrassion_result(fit, x_test, y_test, degree, use_plot, report, resid_test, figsize, dpi, order, p_value_num)
     else:
-        my_linear_regrassion_result(fit, x_train, y_train, degree, use_plot, report, resid_test, figsize, dpi, order)
+        my_linear_regrassion_result(fit, x_train, y_train, degree, use_plot, report, resid_test, figsize, dpi, order, p_value_num)
 
     return fit
 
-def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, degree: int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order:str = None) -> LinearRegression:
+def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, degree: int = 1,use_plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, order:str = None,p_value_num:float = 0.05) -> LinearRegression:
     """선형회귀분석 결과를 출력한다.
 
     Args:
@@ -90,6 +91,8 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
         resid_test (bool, optional): 잔차의 가정을 확인할지 여부. Defaults to False.
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
+        order (bool, optional): 독립변수 결과 보고 표의 정렬 기준 (v, p)
+        p_value_num (float, optional) : 회귀모형의 유의확률. Drfaults to 0.05
 
     Returns:
         LinearRegression: 회귀분석 모델
@@ -116,7 +119,7 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     
     if report:
         print("")
-        my_linear_regrassion_report(fit, x, y, order)
+        my_linear_regrassion_report(fit, x, y, order, p_value_num)
         
     # 시각화
     if use_plot:
@@ -148,7 +151,7 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     # 잔차 가정 확인  
     if resid_test:
         print("\n\n[잔차의 가정 확인] ==============================")
-        my_resid_test(x, y, y_pred, figsize=figsize, dpi=dpi)
+        my_resid_test(x, y, y_pred, figsize=figsize, dpi=dpi, p_value_num= p_value_num)
 
     # 도출된 결과를 회귀모델 객체에 포함시킴
     fit.x = x
@@ -156,13 +159,15 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
     fit.y_pred = y_pred
     fit.resid = y - y_pred
 
-def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: Series = None, order : str = None) -> None:
+def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: Series = None, order : str = None, p_value_num:float=0.05 ) -> None:
     """선형회귀분석 결과를 보고한다.
 
     Args:
         fit (LinearRegression): 선형회귀 객체
         x (DataFrame): 독립변수에 대한 훈련 데이터
         y (Series): 종속변수에 대한 훈련 데이터
+        order (bool, optional): 독립변수 결과 보고 표의 정렬 기준 (v, p)
+        p_value_num (float, optional) : 회귀모형의 유의확률. Drfaults to 0.05
     """
     print("[선형회귀분석 결과보고]")
     if x is None and y is None:
@@ -250,7 +255,7 @@ def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: S
     print(tpl, end="\n\n")
 
     # 결과보고
-    tpl = f"{yname}에 대하여 {','.join(xnames)}로 예측하는 회귀분석을 실시한 결과, 이 회귀모형은 통계적으로 유의{'하다' if p <= 0.05 else '하지 않다'}(F({len(x.columns)},{len(x.index)-len(x.columns)-1}) = {f_statistic:0.3f}, p {'<=' if p <= 0.05 else '>'} 0.05)."
+    tpl = f"{yname}에 대하여 {','.join(xnames)}로 예측하는 회귀분석을 실시한 결과, 이 회귀모형은 통계적으로 유의{'하다' if p <= 0.05 else '하지 않다'}(F({len(x.columns)},{len(x.index)-len(x.columns)-1}) = {f_statistic:0.3f}, p {'<=' if p <= p_value_num else '>'} 0.05)."
 
     print(tpl, end = '\n\n')
 
@@ -260,16 +265,16 @@ def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: S
         coef = item['B(비표준화 계수)'].values[0]
         pvalue = item['유의확률'].values[0]
 
-        s = f"{n}의 회귀계수는 {coef:0.3f}(p {'<=' if pvalue <= 0.05 else '>'} 0.05)로, {yname}에 대하여 {'유의미한' if pvalue <= 0.05 else '유의하지 않은'} 예측변인인 것으로 나타났다."
+        s = f"{n}의 회귀계수는 {coef:0.3f}(p {'<=' if pvalue <= p_value_num else '>'} 0.05)로, {yname}에 대하여 {'유의미한' if pvalue <= p_value_num else '유의하지 않은'} 예측변인인 것으로 나타났다."
 
         print(s)
         
     print("")
     변수 = '없음'
-    if result_df["VIF"].max()>10:
+    if result_df["VIF"].max() >= 10:
         변수 = result_df['독립변수'][result_df['VIF'].idxmax()]
     else:
-        if result_df["유의확률"].max()>0.05:
+        if result_df["유의확률"].max() >= p_value_num:
             변수 = result_df['독립변수'][result_df['유의확률'].idxmax()]
 
     print('-'*50)
@@ -308,13 +313,14 @@ def my_resid_normality(y: Series, y_pred: Series) -> None:
     normality = r1 >= 68 and r2 >= 95 and r3 >= 99
     print(f"잔차의 정규성 가정 충족 여부: {normality}")
 
-def my_resid_equal_var(x: DataFrame, y: Series, y_pred: Series) -> None:
+def my_resid_equal_var(x: DataFrame, y: Series, y_pred: Series, p_value_num:float =0.05) -> None:
     """잔차의 등분산성 가정을 확인한다.
 
     Args:
         x (DataFrame): 독립변수
         y (Series): 종속변수
         y_pred (Series): 예측값
+        p_value_num(float) : 유의확률
     """
     # 독립변수 데이터 프레임 복사
     x_copy = x.copy()
@@ -329,7 +335,7 @@ def my_resid_equal_var(x: DataFrame, y: Series, y_pred: Series) -> None:
     bs_result = het_breuschpagan(resid, x_copy)
     bs_result_df = DataFrame(bs_result, columns=['values'], index=['statistic', 'p-value', 'f-value', 'f p-value'])
 
-    print(f"잔차의 등분산성 가정 충족 여부: {bs_result[1] > 0.05}")
+    print(f"잔차의 등분산성 가정 충족 여부: {bs_result[1] > p_value_num}")
     my_pretty_table(bs_result_df)
 
 def my_resid_independence(y: Series, y_pred: Series) -> None:
@@ -342,13 +348,14 @@ def my_resid_independence(y: Series, y_pred: Series) -> None:
     dw = durbin_watson(y - y_pred)
     print(f"Durbin-Watson: {dw}, 잔차의 독립성 가정 만족 여부: {1.5 < dw < 2.5}")
     
-def my_resid_test(x: DataFrame, y: Series, y_pred: Series, figsize: tuple=(10, 4), dpi: int=150) -> None:
+def my_resid_test(x: DataFrame, y: Series, y_pred: Series, figsize: tuple=(10, 4), dpi: int=150, p_value_num:float = 0.05) -> None:
     """잔차의 가정을 확인한다.
 
     Args:
         x (Series): 독립변수
         y (Series): 종속변수
         y_pred (Series): 예측값
+        p_value_num(float) : 유의확률
     """
 
     # 잔차 생성
@@ -363,7 +370,7 @@ def my_resid_test(x: DataFrame, y: Series, y_pred: Series, figsize: tuple=(10, 4
     my_resid_normality(y, y_pred)
     
     print("\n[잔차의 등분산성 가정]")
-    my_resid_equal_var(x, y, y_pred)
+    my_resid_equal_var(x, y, y_pred, p_value_num)
     
     print("\n[잔차의 독립성 가정]")
     my_resid_independence(y, y_pred)
