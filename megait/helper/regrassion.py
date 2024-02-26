@@ -265,6 +265,17 @@ def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: S
         print(s)
         
     print("")
+    변수 = '없음'
+    if result_df["VIF"].max()>10:
+        변수 = result_df['독립변수'][result_df['VIF'].idxmax()]
+    else:
+        if result_df["유의확률"].max()>0.05:
+            변수 = result_df['독립변수'][result_df['유의확률'].idxmax()]
+
+    print('-'*50)
+
+    print(f'빼야하는 변수 : {변수}')
+    print('-'*50)
 
     # 도출된 결과를 회귀모델 객체에 포함시킴 --> 객체 타입의 파라미터는 참조변수로 전달되므로 fit 객체에 포함된 결과값들은 이 함수 외부에서도 사용 가능하다.
     fit.r2 = r2
