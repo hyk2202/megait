@@ -202,7 +202,10 @@ def my_linear_regrassion_report(fit: LinearRegression, x: DataFrame = None, y: S
     p_values = [2*(1-t.cdf(np.abs(i),(len(design_x)-len(design_x.iloc[0])))) for i in ts_b]
 
     # VIF
-    vif = [variance_inflation_factor(x, list(x.columns).index(v)) for i, v in enumerate(x.columns)]
+    if len(x.columns) > 1:
+        vif = [variance_inflation_factor(x, list(x.columns).index(v)) for i, v in enumerate(x.columns)]
+    else:
+        vif = 0
 
     # 표준화 계수
     train_df = x.copy()
