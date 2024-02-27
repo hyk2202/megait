@@ -15,11 +15,13 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 from math import sqrt
 from scipy.stats import t
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from scipy.spatial import ConvexHull
 from statannotations.Annotator import Annotator
 from scipy.stats import zscore, probplot
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import learning_curve
+from sklearn.preprocessing import StandardScaler
 
 def my_boxplot(df: DataFrame, orient : str = 'v', hue=None, figsize: tuple = (10, 4), dpi: int = 150, plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None) -> None:
     """데이터프레임 내의 모든 컬럼에 대해 상자그림을 그려서 분포를 확인한다.
@@ -460,3 +462,83 @@ def my_qqplot(y_pred: np.ndarray, figsize: tuple=(10, 4), dpi: int=150) -> None:
     plt.grid()
     plt.show()
     plt.close()
+
+def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool = False, cv: int=10, train_sizes: np.ndarray=np.linspace(0.01, 1.0, 10), scoring: str = None, figsize: tuple=(10, 5), dpi: int=200) -> None:
+    """학습곡선을 출력한다.
+
+    Args:
+        fit (_type_): 학습모델 객체
+        data (DataFrame): 독립변수
+        yname (Series): 종속변수
+        scaling (bool, optional): 스케일링 여부. Defaults to False.
+        cv (int, optional): 교차검증의 수. Defaults to 10.
+        train_sizes (np.ndarray, optional): 훈련 데이터의 비율. Defaults to np.linspace(0.1, 1.0, 10).
+        scoring (str, optional): 평가지표. Defaults to None.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+    """
+    if yname not in data.columns:
+        raise Exception(f"\x1b[31m종속변수 {yname}가 존재하지 않습니다.\x1b[0m")
+    
+    x = data.drop(yname, axis=1)
+    y = data[yname]
+
+    if scalling:
+        scaler = StandardScaler()
+        x = DataFrame(scaler.fit_transform(x), index=x.index, columns=x.columns)
+
+    error_name = ['MAE',
+                  'MAPE',
+                  'MSE',
+                  'MSE_log',
+                  'RMSE',
+                  'RMSE_log',
+                  'R2'
+                  ]
+    
+    error_value = ["neg_mean_absolute_error",
+                   "neg_mean_absolute_percentage_error",
+                   "neg_mean_squared_error",
+                   "neg_mean_squared_log_error",
+                   "neg_root_mean_squared_error",
+                   "neg_root_mean_squared_log_error",
+                   'r2'
+                   ]
+    
+    # 평가지표가 없는 경우
+    if scoring == None:
+        train_sizes, train_scores, test_scores = learning_curve(fit, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes)
+        
+        ylabel = 'Score'
+        
+    # 평가지표가 있는 경우
+    else:
+        ylabel  = scoring
+        if scoring in error_name: 
+            scoring = error_value[error_name.index(scoring)]
+
+        train_sizes, train_scores, test_scores = learning_curve(fit, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes, scoring=scoring)
+
+    train_mean = -np.mean(train_scores, axis=1)
+    train_std = -np.std(train_scores, axis=1)
+    test_mean = -np.mean(test_scores, axis=1) 
+    test_std = -np.std(test_scores, axis=1)
+
+    plt.figure(figsize=figsize, dpi=dpi)
+
+    # 훈련 데이터 수에 따른 훈련 데이터의 score 평균
+    sb.lineplot(x=train_sizes, y=train_mean,  marker='o', markersize=5, label='훈련 데이터', color='#ff2200')
+    plt.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15, color='#ff2200')
+
+    # 검증 데이터 수에 따른 검증 데이터의 score 평균
+    sb.lineplot(x=train_sizes, y=test_mean, linestyle='--', marker='s', markersize=5, label='검증 데이터', color='#0066ff')
+    plt.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15, color='#0066ff')
+
+    plt.grid()
+    plt.xlabel('훈련 셋트 크기')
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
