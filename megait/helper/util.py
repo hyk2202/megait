@@ -2,10 +2,48 @@ from os.path import exists
 from os import mkdir
 import numpy as np
 from tabulate import tabulate
-from pandas import DataFrame, read_excel, read_csv, read_json, get_dummies
+from pandas import DataFrame, read_excel, get_dummies
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.impute import SimpleImputer
+from scipy.stats import normaltest
+
+def my_normalize_data(mean: float, std: float, size: int = 100, round: int = 2) -> np.ndarray:
+    """정규분포를 따르는 데이터를 생성한다.
+
+    Args:
+        mean (float): 평균
+        std (float): 표준편차
+        size (int, optional): 데이터 크기. Defaults to 1000.
+
+    Returns:
+        np.ndarray: 정규분포를 따르는 데이터
+    """
+    p = 0
+    x = []
+    while p < 0.05:
+        x = np.random.normal(mean, std, size).round(round)
+        _, p = normaltest(x)
+        
+    return x
+
+def my_normalize_df(means: list = [0, 0, 0], stds: list = [1, 1, 1], sizes: list = [100, 100, 100], rounds: int = 2) -> DataFrame:
+    """정규분포를 따르는 데이터프레임을 생성한다.
+
+    Args:
+        means (list): 평균 목록
+        stds (list): 표준편차 목록
+        sizes (list, optional): 데이터 크기 목록. Defaults to [100, 100, 100].
+        rounds (int, optional): 반올림 자리수. Defaults to 2.
+
+    Returns:
+        DataFrame: 정규분포를 따르는 데이터프레임
+    """
+    data = {}
+    for i in range(0, len(means)):
+        data[f'X{i+1}'] = my_normalize_data(means[i], stds[i], sizes[i], rounds)
+        
+    return DataFrame(data)
 
 def my_pretty_table(data: DataFrame) -> None:
     print(tabulate(data, headers='keys', tablefmt='psql',showindex=True, numalign="right"))
@@ -458,26 +496,55 @@ def my_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
         
     return (v_trend, t_trend)
 
-def my_poly_features(data: DataFrame, columns: list = [], degree:int = 2)-> DataFrame:
+def my_poly_features(data: DataFrame, columns: list = [], ignore: list = [], degree: int = 2) -> DataFrame:
     """전달된 데이터프레임에 대해서 2차항을 추가한 새로온 데이터프레임을 리턴한다.
 
     Args:
         data (DataFrame): 원본 데이터 프레임
         columns (list, optional): 2차항을 생성할 필드 목록. 전달되지 않을 경우 전체 필드에 대해 처리 Default to [].
+        ignore (list, optional): 2차항을 생성하지 않을 필드 목록. Default to [].
         degree (int, optional): 차수. Default to 2
 
     Returns:
         DataFrame: 2차항이 추가된 새로운 데이터 프레임
     """
-
     df = data.copy()
+    
     if not columns:
-        columns=df.columns
-
-    poly = PolynomialFeatures(degree=degree, include_bias = False)
+        columns = df.columns
+    
+    ignore_df = None
+    if ignore:
+        ignore_df = df[ignore]
+        df.drop(ignore, axis=1, inplace=True)
+        columns = [c for c in columns if c not in ignore]
+        
+    poly = PolynomialFeatures(degree=degree, include_bias=False)
     poly_fit = poly.fit_transform(df[columns])
-    poly_df = DataFrame(poly_fit, columns = poly.get_feature_names_out(), index = df.index)
-
+    poly_df = DataFrame(poly_fit, columns=poly.get_feature_names_out(), index=df.index)
+    
     df[poly_df.columns] = poly_df[poly_df.columns]
+    
+    if ignore_df is not None:
+        df[ignore] = ignore_df
+    
+    return df
 
+def my_labelling(data: DataFrame, *fields) -> DataFrame:
+    """명목형 변수를 라벨링한다.
+
+    Args:
+        data (DataFrame): 데이터프레임
+        *fields (str): 명목형 컬럼 목록
+
+    Returns:
+        DataFrame: 라벨링된 데이터프레임
+    """
+    df = data.copy()
+    
+    for f in fields:
+        vc = sorted(list(df[f].unique()))
+        label = {v: i for i, v in enumerate(vc)}
+        df[f] = df[f].map(label).astype('int')
+    
     return df

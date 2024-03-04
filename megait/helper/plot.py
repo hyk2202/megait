@@ -19,7 +19,7 @@ from pandas import DataFrame, Series
 from scipy.spatial import ConvexHull
 from statannotations.Annotator import Annotator
 from scipy.stats import zscore, probplot
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, ConfusionMatrixDisplay, roc_curve, roc_auc_score, precision_recall_curve
 from sklearn.model_selection import learning_curve
 from sklearn.preprocessing import StandardScaler
 
@@ -542,3 +542,126 @@ def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool =
     plt.show()
     plt.close()
 
+def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', figsize: tuple=(4,3), dpi: int=100) -> None:
+    """혼동행렬을 출력한다.
+
+    Args:
+        y_true (np.ndarray): 실제값
+        y_pred (np.ndarray): 예측값
+        cmap (str, optional): 칼라맵. Defaults to 'Blues'.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+    """
+    plt.figure(figsize=figsize, dpi=dpi)
+    ax = plt.gca()
+    
+    
+    # 다중 로지스틱을 살펴볼 때 함수 파라미터 설정이 변경될 수 있다.
+    ConfusionMatrixDisplay.from_predictions(
+        y,              # 관측치
+        y_pred,         # 예측치
+        #display_labels=["Negative", "Positive"],
+        cmap=cmap,
+        text_kw={'fontsize': 24, 'weight': 'bold'},
+        ax=ax
+    )
+    
+    # plt.tight_layout()
+    plt.show()
+    plt.close()
+    
+    
+def my_roc_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) -> None:
+    """ROC곡선을 출력한다.
+
+    Args:
+        y (Series): 실제값
+        y_proba (Series): 예측확률
+    """
+    # 두 번째 파라미터가 판정결과가 아닌 1로 판정할 확률값
+    fpr, tpr, thresholds = roc_curve(y, y_proba)
+
+    plt.figure(figsize=figsize, dpi=dpi)
+    sb.lineplot(x=fpr, y=tpr, color='red', linewidth=1, label='ROC Curve')
+    plt.fill_between(fpr,tpr, facecolor='blue',alpha=0.1)
+    sb.lineplot(x=[0,1], y=[0,1], color='black', linestyle='--', linewidth=0.7)
+    plt.xlabel('Fase Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.xticks(np.round(np.arange(0, 1.1, 0.1),2))
+    plt.xlim(-0.01,1.01)
+    plt.ylim(-0.01,1.01)
+    plt.text(0.95, 0.05, 'AUC=%0.3f' % roc_auc_score(y, y_proba), fontsize=16, ha='right', va='bottom')
+    plt.grid()
+    # plt.tight_layout()
+    plt.show()
+    plt.close()
+    
+    
+def my_pr_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) -> None:
+    """Precision-Recall 곡선을 출력한다.
+
+    Args:
+        y (Series): 실제값
+        y_proba (Series): 예측확률
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 10).
+        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+    """
+    precision, recall, thresholds = precision_recall_curve(y_true=y, probas_pred=y_proba)
+    y_test_mean = y.mean()
+
+    plt.figure(figsize=figsize, dpi=dpi)
+    sb.lineplot(x=recall, y=precision, label='Precision / Recall Curve', color='blue', linewidth=1)
+    sb.lineplot(x=[0,1], y=[y_test_mean,y_test_mean], color='black', linewidth=0.7, linestyle='--')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.xticks(np.round(np.arange(0, 1.1, 0.1),2))
+    plt.xlim(-0.01, 1.01)
+    plt.ylim(y_test_mean-0.05, 1.01)
+    plt.grid()
+    # plt.tight_layout()
+    plt.show()
+    plt.close()
+    
+    
+def my_roc_pr_curve(y: Series, y_proba: Series, figsize: tuple = (16, 6), dpi=200) -> None:
+    """ROC와 Precision-Recall 곡선을 출력한다.
+
+    Args:
+        y (Series): 실제값
+        y_proba (Series): 예측확률
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 10).
+        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+    """
+    fig, ax = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
+
+    # ROC Curve
+    fpr, tpr, thresholds = roc_curve(y, y_proba)
+    sb.lineplot(x=fpr, y=tpr, color='red', linewidth=1, label='ROC Curve', ax=ax[0])
+    ax[0].fill_between(fpr, tpr, facecolor='blue',alpha=0.1)
+    sb.lineplot(x=[0, 1], y=[0, 1], color='black', linestyle='--', linewidth=0.7, ax=ax[0])
+    ax[0].set_xlabel('False Positive Rate')
+    ax[0].set_ylabel('True Positive Rate')
+    ax[0].set_xticks(np.round(np.arange(0, 1.1, 0.1), 2))
+    ax[0].set_xlim([-0.01, 1.01])
+    ax[0].set_ylim([-0.01, 1.01])
+    ax[0].text(0.95, 0.05, 'AUC=%0.3f' % roc_auc_score(y, y_proba), fontsize=16, ha='right', va='bottom')
+    ax[0].legend()
+    ax[0].grid()
+
+    # Precision-Recall Curve
+    precision, recall, thresholds = precision_recall_curve(y, y_proba)
+    y_mean = y.mean()
+    
+    sb.lineplot(x=recall, y=precision, label='Precision / Recall Curve', color='blue', linewidth=1, ax=ax[1])
+    sb.lineplot(x=[0,1], y=[y_mean,y_mean], color='black', linewidth=0.7, linestyle='--', ax=ax[1])
+    ax[1].set_xlabel('Recall')
+    ax[1].set_ylabel('Precision')
+    ax[1].set_xticks(np.round(np.arange(0, 1.1, 0.1), 2))
+    ax[1].set_xlim([-0.01, 1.01])
+    ax[1].set_ylim([y_mean-0.05, 1.01])
+    ax[1].legend()
+    ax[1].grid()
+
+    # plt.tight_layout()
+    plt.show()
+    plt.close()
