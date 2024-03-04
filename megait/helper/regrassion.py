@@ -18,7 +18,7 @@ from scipy.stats import t, f
 from helper.util import my_pretty_table, my_trend, my_train_test_split
 from helper.plot import my_residplot, my_qqplot, my_learing_curve
 
-def my_auto_linear_regrassion(df:DataFrame, yname:str,ignore:list=[], cv:int=0, degree:int=1,plot:bool=True,report=True,resid_test=False, figsize=(10, 4), dpi=150, order: str = None,p_value_num:float=0.05 ) -> LinearRegression:
+def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=0, learning_curve: bool = True, degree : int = 1, plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, sort: str = None,order: str = None,p_value_num:float=0.05) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -37,7 +37,7 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str,ignore:list=[], cv:int=0, 
         LinearRegression: 회귀분석 모델
     """
 
-    x_train, x_test, y_train, y_test = my_train_test_split(df.drop(ignore,axis=1), yname, test_size=0.2)
+    x_train, x_test, y_train, y_test = my_train_test_split(df, yname, test_size=0.2)
     
     xnames = x_train.columns
     yname = y_train.name
@@ -58,7 +58,7 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str,ignore:list=[], cv:int=0, 
         result_df['mean_test_score'] = grid.cv_results_['mean_test_score']
         
         # print("[교차검증]")
-        my_pretty_table(result_df.sort_values(by='mean_test_score', ascending=False))
+        # my_pretty_table(result_df.sort_values(by='mean_test_score', ascending=False))
         # print("")
 
     fit = model.fit(x_train, y_train)
@@ -124,7 +124,7 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str,ignore:list=[], cv:int=0, 
         elif  order == 'P':
             result_df.sort_values('유의확률',inplace=True)
         #result_df
-    my_pretty_table(result_df)
+    # my_pretty_table(result_df)
         
     resid = y - y_pred        # 잔차
     dw = durbin_watson(resid)               # 더빈 왓슨 통계량
@@ -161,17 +161,17 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str,ignore:list=[], cv:int=0, 
         
     # print("")
     if result_df["VIF"].max() >= 10:
-        return my_auto_linear_regrassion(df, yname, result_df['독립변수'][result_df['VIF'].idxmax()], cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
+        print('-'*50)
+        print('뺀 변수 :',result_df['독립변수'][result_df['VIF'].idxmax()])
+        print('-'*50)
+        return my_auto_linear_regrassion(df.drop(result_df['독립변수'][result_df['VIF'].idxmax()],axis=1), yname, cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
     else:
         if result_df["유의확률"].max() >= p_value_num:
-            return my_auto_linear_regrassion(df, yname, result_df['독립변수'][result_df['유의확률'].idxmax()], cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
-
-    # print('-'*50)
-
-    # print(f'빼야하는 변수 : {변수}')
-    # print('-'*50)
-
-    return fit
+            print('-'*50)
+            print('뺀 변수 :',result_df['독립변수'][result_df['유의확률'].idxmax()])
+            print('-'*50)
+            return my_auto_linear_regrassion(df.drop(result_df['독립변수'][result_df['유의확률'].idxmax()],axis=1), yname,cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
+    my_linear_regrassion(x_train =x_train , y_train =y_train ,x_test=x_test,y_test=y_test,cv=cv,learning_curve=learning_curve,degree=degree,plot=plot,report=report,resid_test=resid_test,figsize=figsize,dpi=dpi,sort=sort,order=order,p_value_num=p_value_num)
 
 
 

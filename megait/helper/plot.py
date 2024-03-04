@@ -463,7 +463,7 @@ def my_qqplot(y_pred: np.ndarray, figsize: tuple=(10, 4), dpi: int=150) -> None:
     plt.show()
     plt.close()
 
-def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool = False, cv: int=10, train_sizes: np.ndarray=np.linspace(0.01, 1.0, 10), scoring: str = None, figsize: tuple=(10, 5), dpi: int=200) -> None:
+def my_learing_curve(estimator:any, data: DataFrame, yname: str='target', scalling: bool = False, cv: int=10, train_sizes: np.ndarray=np.linspace(0.01, 1.0, 10), scoring: str = None, figsize: tuple=(10, 5), dpi: int=150, random_state:int=123) -> None:
     """학습곡선을 출력한다.
 
     Args:
@@ -482,7 +482,7 @@ def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool =
     
     x = data.drop(yname, axis=1)
     y = data[yname]
-
+    w = 1
     if scalling:
         scaler = StandardScaler()
         x = DataFrame(scaler.fit_transform(x), index=x.index, columns=x.columns)
@@ -507,7 +507,7 @@ def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool =
     
     # 평가지표가 없는 경우
     if scoring == None:
-        train_sizes, train_scores, test_scores = learning_curve(fit, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes)
+        train_sizes, train_scores, test_scores = learning_curve(estimator, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes, random_state=random_state)
         
         ylabel = 'Score'
         
@@ -516,13 +516,51 @@ def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool =
         ylabel  = scoring
         if scoring in error_name: 
             scoring = error_value[error_name.index(scoring)]
+        if scoring in ('rmse','mse'): w = -1
+        scoring_list = ["r2", 
+                        "max_error", 
+                        "matthews_corrcoef", 
+                        "neg_median_absolute_error", 
+                        "neg_mean_absolute_error", 
+                        "neg_mean_absolute_percentage_error", 
+                        "neg_mean_squared_error", 
+                        "neg_mean_squared_log_error", 
+                        "neg_root_mean_squared_error", 
+                        "neg_root_mean_squared_log_error", 
+                        "neg_mean_poisson_deviance", 
+                        "neg_mean_gamma_deviance", 
+                        "accuracy", 
+                        "top_k_accuracy", 
+                        "roc_auc", 
+                        "roc_auc_ovr", 
+                        "roc_auc_ovo", 
+                        "roc_auc_ovr_weighted", 
+                        "roc_auc_ovo_weighted", 
+                        "balanced_accuracy", 
+                        "average_precision", 
+                        "neg_log_loss", 
+                        "neg_brier_score", 
+                        "positive_likelihood_ratio", 
+                        "neg_negative_likelihood_ratio", 
+                        "adjusted_rand_score", 
+                        "rand_score", 
+                        "homogeneity_score", 
+                        "completeness_score", 
+                        "v_measure_score", 
+                        "mutual_info_score", 
+                        "adjusted_mutual_info_score", 
+                        "normalized_mutual_info_score", 
+                        "fowlkes_mallows_score"]
+        
+        if scoring not in scoring_list:
+            raise Exception(f"\x1b[31m평가지표 {scoring}가 존재하지 않습니다.\x1b[0m")
 
-        train_sizes, train_scores, test_scores = learning_curve(fit, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes, scoring=scoring)
+        train_sizes, train_scores, test_scores = learning_curve(estimator, x, y, cv=cv, n_jobs=-1, train_sizes=train_sizes, scoring=scoring, random_state=random_state)
 
-    train_mean = -np.mean(train_scores, axis=1)
-    train_std = -np.std(train_scores, axis=1)
-    test_mean = -np.mean(test_scores, axis=1) 
-    test_std = -np.std(test_scores, axis=1)
+    train_mean = w * np.mean(train_scores, axis=1)
+    train_std = w * np.std(train_scores, axis=1)
+    test_mean = w * np.mean(test_scores, axis=1) 
+    test_std = w * np.std(test_scores, axis=1)
 
     plt.figure(figsize=figsize, dpi=dpi)
 
@@ -538,19 +576,19 @@ def my_learing_curve(fit, data: DataFrame, yname: str='target', scalling: bool =
     plt.xlabel('훈련 셋트 크기')
     plt.ylabel(ylabel)
     plt.legend()
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
     plt.close()
 
-def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', figsize: tuple=(4,3), dpi: int=100) -> None:
+def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', figsize: tuple=(4,3), dpi: int=150) -> None:
     """혼동행렬을 출력한다.
 
     Args:
         y_true (np.ndarray): 실제값
         y_pred (np.ndarray): 예측값
         cmap (str, optional): 칼라맵. Defaults to 'Blues'.
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
-        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (4, 3).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     ax = plt.gca()
@@ -571,7 +609,7 @@ def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', 
     plt.close()
     
     
-def my_roc_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) -> None:
+def my_roc_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=150) -> None:
     """ROC곡선을 출력한다.
 
     Args:
@@ -597,14 +635,14 @@ def my_roc_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) -
     plt.close()
     
     
-def my_pr_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) -> None:
+def my_pr_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=150) -> None:
     """Precision-Recall 곡선을 출력한다.
 
     Args:
         y (Series): 실제값
         y_proba (Series): 예측확률
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 10).
-        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (8, 6).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     precision, recall, thresholds = precision_recall_curve(y_true=y, probas_pred=y_proba)
     y_test_mean = y.mean()
@@ -623,14 +661,14 @@ def my_pr_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=200) ->
     plt.close()
     
     
-def my_roc_pr_curve(y: Series, y_proba: Series, figsize: tuple = (16, 6), dpi=200) -> None:
+def my_roc_pr_curve(y: Series, y_proba: Series, figsize: tuple = (16, 6), dpi=150) -> None:
     """ROC와 Precision-Recall 곡선을 출력한다.
 
     Args:
         y (Series): 실제값
         y_proba (Series): 예측확률
-        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 10).
-        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (16, 6).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     fig, ax = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
 
