@@ -598,7 +598,7 @@ def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', 
     ConfusionMatrixDisplay.from_predictions(
         y,              # 관측치
         y_pred,         # 예측치
-        #display_labels=["Negative", "Positive"],
+        display_labels=list(set(y))
         cmap=cmap,
         text_kw={'fontsize': 24, 'weight': 'bold'},
         ax=ax
