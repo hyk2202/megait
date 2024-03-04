@@ -172,10 +172,7 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=0, learning_curve:
             print('-'*50)
             return my_auto_linear_regrassion(df.drop(result_df['독립변수'][result_df['유의확률'].idxmax()],axis=1), yname,cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
     my_linear_regrassion(x_train =x_train , y_train =y_train ,x_test=x_test,y_test=y_test,cv=cv,learning_curve=learning_curve,degree=degree,plot=plot,report=report,resid_test=resid_test,figsize=figsize,dpi=dpi,sort=sort,order=order,p_value_num=p_value_num)
-
-
-
-
+    
 def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 5,  learning_curve: bool = True, degree : int = 1, plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, sort: str = None,order: str = None,p_value_num:float=0.05 ) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
@@ -334,7 +331,6 @@ def my_ridge_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame =
 
     return estimator
 
-
 def my_lasso_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 5, learning_curve: bool = True, report=False, plot: bool = False, degree: int = 1, resid_test=False, figsize=(10, 5), dpi: int = 100, sort: str = None, params: dict = {'alpha': [0.01, 0.1, 1, 10, 100]}) -> LinearRegression:
     """라쏘회귀분석을 수행하고 결과를 출력한다.
 
@@ -418,7 +414,6 @@ def my_lasso_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame =
         my_resid_test(estimator.x, estimator.y, estimator.y_pred, figsize=figsize, dpi=dpi)
 
     return estimator
-
 
 def my_regrassion_result(estimator: any, x_train: DataFrame = None, y_train: Series = None, x_test: DataFrame = None, y_test: Series = None, learning_curve: bool = True, cv: int = 10, figsize: tuple = (10, 5), dpi: int = 100) -> None:
     """회귀분석 결과를 출력한다.
