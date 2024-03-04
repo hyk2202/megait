@@ -18,7 +18,7 @@ from scipy.stats import t, f
 from helper.util import my_pretty_table, my_trend, my_train_test_split
 from helper.plot import my_residplot, my_qqplot, my_learing_curve
 
-def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=0, learning_curve: bool = True, degree : int = 1, plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, sort: str = None,order: str = None,p_value_num:float=0.05) -> LinearRegression:
+def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=5, learning_curve: bool = True, degree : int = 1, plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, sort: str = None,order: str = None,p_value_num:float=0.05) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
 
     Args:
@@ -161,17 +161,141 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=0, learning_curve:
         
     # print("")
     if result_df["VIF"].max() >= 10:
-        print('-'*50)
-        print('뺀 변수 :',result_df['독립변수'][result_df['VIF'].idxmax()])
-        print('-'*50)
+        # print('-'*50)
+        # print('뺀 변수 :',result_df['독립변수'][result_df['VIF'].idxmax()])
+        # print('-'*50)
         return my_auto_linear_regrassion(df.drop(result_df['독립변수'][result_df['VIF'].idxmax()],axis=1), yname, cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
     else:
         if result_df["유의확률"].max() >= p_value_num:
-            print('-'*50)
-            print('뺀 변수 :',result_df['독립변수'][result_df['유의확률'].idxmax()])
-            print('-'*50)
+            # print('-'*50)
+            # print('뺀 변수 :',result_df['독립변수'][result_df['유의확률'].idxmax()])
+            # print('-'*50)
             return my_auto_linear_regrassion(df.drop(result_df['독립변수'][result_df['유의확률'].idxmax()],axis=1), yname,cv, degree,plot,report,resid_test, figsize, dpi, order,p_value_num )
-    my_linear_regrassion(x_train =x_train , y_train =y_train ,x_test=x_test,y_test=y_test,cv=cv,learning_curve=learning_curve,degree=degree,plot=plot,report=report,resid_test=resid_test,figsize=figsize,dpi=dpi,sort=sort,order=order,p_value_num=p_value_num)
+    
+    x_train, x_test, y_train, y_test = my_train_test_split(df, yname, test_size=0.2)
+    
+    xnames = x_train.columns
+    yname = y_train.name
+    size = len(xnames)
+
+    # 분석모델 생성
+    model = LinearRegression(n_jobs=-1) # n_jobs : 사용하는 cpu 코어의 개수 // -1은 최대치
+
+    # 교차검증 설정
+    if cv > 0:
+        params = {}
+        grid = GridSearchCV(model, param_grid=params, cv=cv, n_jobs=-1)
+        fit = grid.fit(x_train, y_train)
+        model = fit.best_estimator_
+        fit.best_params = fit.best_params_
+        
+        result_df = DataFrame(grid.cv_results_['params'])
+        result_df['mean_test_score'] = grid.cv_results_['mean_test_score']
+        
+        print("[교차검증]")
+        my_pretty_table(result_df.sort_values(by='mean_test_score', ascending=False))
+        print("")
+
+    fit = model.fit(x_train, y_train)
+    x = x_test
+    y = y_test
+    y_pred = fit.predict(x)
+
+    resid = y - y_pred
+
+    # 절편과 계수를 하나의 배열로 결합
+    params = np.append(fit.intercept_, fit.coef_)
+
+    # 검증용 독립변수에 상수항 추가
+    design_x = x.copy()
+    design_x.insert(0, '상수', 1)
+
+    dot = np.dot(design_x.T,design_x)   # 행렬곱
+    inv = np.linalg.inv(dot)            # 역행렬
+    dia = inv.diagonal()                # 대각원소
+
+    # 제곱오차
+    MSE = (sum((y-y_pred)**2)) / (len(design_x)-len(design_x.iloc[0]))
+
+    se_b = np.sqrt(MSE * dia)           # 표준오차
+    ts_b = params / se_b                # t값
+
+    # 각 독립수에 대한 pvalue
+    p_values = [2*(1-t.cdf(np.abs(i),(len(design_x)-len(design_x.iloc[0])))) for i in ts_b]
+
+    # VIF
+    if len(x.columns) > 1:
+        vif = [variance_inflation_factor(x, list(x.columns).index(v)) for i, v in enumerate(x.columns)]
+    else:
+        vif = 0
+
+    # 표준화 계수
+    train_df = x.copy()
+    train_df[y.name] = y
+    scaler = StandardScaler()
+    std = scaler.fit_transform(train_df)
+    std_df = DataFrame(std, columns=train_df.columns)
+    std_x = std_df[xnames]
+    std_y = std_df[yname]
+    std_model = LinearRegression()
+    std_fit = std_model.fit(std_x, std_y)
+    beta = std_fit.coef_
+
+    # 결과표 구성하기
+    result_df = DataFrame({
+        "종속변수": [yname] * len(xnames),
+        "독립변수": xnames,
+        "B(비표준화 계수)": np.round(params[1:], 4),
+        "표준오차": np.round(se_b[1:], 3),
+        "β(표준화 계수)": np.round(beta, 3),
+        "t": np.round(ts_b[1:], 3),
+        "유의확률": np.round(p_values[1:], 3),
+        "VIF": vif,
+    })
+    if order:
+        order = order.upper()
+        if order == 'V':
+            result_df.sort_values('VIF',inplace=True)
+        elif  order == 'P':
+            result_df.sort_values('유의확률',inplace=True)
+        # result_df
+    my_pretty_table(result_df)
+        
+    resid = y - y_pred        # 잔차
+    dw = durbin_watson(resid)               # 더빈 왓슨 통계량
+    r2 = r2_score(y, y_pred)  # 결정계수(설명력)
+    rowcount = len(x)                # 표본수
+    featurecount = len(x.columns)    # 독립변수의 수
+
+    # 보정된 결정계수
+    adj_r2 = 1 - (1 - r2) * (rowcount-1) / (rowcount-featurecount-1)
+
+    # f값
+    f_statistic = (r2 / featurecount) / ((1 - r2) / (rowcount - featurecount - 1))
+
+    # Prob (F-statistic)
+    p = 1 - f.cdf(f_statistic, featurecount, rowcount - featurecount - 1)
+
+    tpl = f"𝑅^2({r2:.3f}), Adj.𝑅^2({adj_r2:.3f}), F({f_statistic:.3f}), P-value({p:.4g}), Durbin-Watson({dw:.3f})"
+    print(tpl, end="\n\n")
+
+    # 결과보고
+    tpl = f"{yname}에 대하여 {','.join(xnames)}로 예측하는 회귀분석을 실시한 결과, 이 회귀모형은 통계적으로 유의{'하다' if p <= 0.05 else '하지 않다'}(F({len(x.columns)},{len(x.index)-len(x.columns)-1}) = {f_statistic:0.3f}, p {'<=' if p <= p_value_num else '>'} 0.05)."
+
+    print(tpl, end = '\n\n')
+
+    # 독립변수 보고
+    for n in xnames:
+        item = result_df[result_df['독립변수'] == n]
+        coef = item['B(비표준화 계수)'].values[0]
+        pvalue = item['유의확률'].values[0]
+
+        s = f"{n}의 회귀계수는 {coef:0.3f}(p {'<=' if pvalue <= p_value_num else '>'} 0.05)로, {yname}에 대하여 {'유의미한' if pvalue <= p_value_num else '유의하지 않은'} 예측변인인 것으로 나타났다."
+
+        print(s)
+        
+    print("")
+    return fit
     
 def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 5,  learning_curve: bool = True, degree : int = 1, plot: bool = True, report=True, resid_test=False, figsize=(10, 4), dpi=150, sort: str = None,order: str = None,p_value_num:float=0.05 ) -> LinearRegression:
     """선형회귀분석을 수행하고 결과를 출력한다.
@@ -245,7 +369,6 @@ def my_linear_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame 
         my_resid_test(estimator.x, estimator.y, estimator.y_pred, figsize=figsize, dpi=dpi)
 
     return estimator
-
 
 def my_ridge_regrassion(x_train: DataFrame, y_train: Series, x_test: DataFrame = None, y_test: Series = None, cv: int = 5, learning_curve: bool = True, report=False, plot: bool = False, degree: int = 1, resid_test=False, figsize=(10, 5), dpi: int = 100, sort: str = None, params: dict = {'alpha': [0.01, 0.1, 1, 10, 100]}) -> LinearRegression:
     """릿지회귀분석을 수행하고 결과를 출력한다.
@@ -612,16 +735,17 @@ def my_regrassion_report(estimator: any, x: DataFrame = None, y: Series = None, 
     print(tpl % (r2, adj_r2, f_statistic, p, dw), end="\n\n")
 
     # 결과보고
-    tpl = "%s에 대하여 %s로 예측하는 회귀분석을 실시한 결과,\n이 회귀모형은 통계적으로 %s(F(%s,%s) = %0.3f, p %s 0.05)."
+    tpl = "%s에 대하여 %s로 예측하는 회귀분석을 실시한 결과,\n이 회귀모형은 통계적으로 %s(F(%s,%s) = %0.3f, p %s %s)."
 
     result_str = tpl % (
         yname,
         ",".join(xnames),
-        "유의하다" if p <= 0.05 else "유의하지 않다",
+        "유의하다" if p <= p_value_num else "유의하지 않다",
         len(x.columns),
         len(x.index)-len(x.columns)-1,
         f_statistic,
-        "<=" if p <= 0.05 else ">")
+        "<=" if p <= p_value_num else ">",
+        p_value_num)
         
     print(result_str, end="\n\n")
 
@@ -631,12 +755,13 @@ def my_regrassion_report(estimator: any, x: DataFrame = None, y: Series = None, 
         coef = item['B(비표준화 계수)'].values[0]
         pvalue = item['유의확률'].values[0]
 
-        s = "%s의 회귀계수는 %0.3f(p %s 0.05)로, %s에 대하여 %s."
+        s = "%s의 회귀계수는 %0.3f(p %s %s)로, %s에 대하여 %s."
         k = s % (n,
                 coef,
-                "<=" if pvalue <= 0.05 else '>',
+                "<=" if pvalue <= p_value_num else '>',
                 yname,
-                '유의미한 예측변인인 것으로 나타났다' if pvalue <= 0.05 else '유의하지 않은 예측변인인 것으로 나타났다'
+                '유의미한 예측변인인 것으로 나타났다' if pvalue <= p_value_num else '유의하지 않은 예측변인인 것으로 나타났다',
+                p_value_num
         )
 
         print(k)

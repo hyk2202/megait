@@ -90,10 +90,10 @@ def my_read_excel(path: str, index_col: str = None, info: bool = True, categorie
         desc['nan'] = data.isnull().sum()
         my_pretty_table(desc)
         
-    if categories:
-        print("\n카테고리 정보")
-        for c in categories:
-            my_pretty_table(DataFrame(data[c].value_counts(), columns=[c]))
+        if categories:
+            print("\n카테고리 정보")
+            for c in categories:
+                my_pretty_table(DataFrame({'count': data[c].value_counts()}))
 
     return data
 
