@@ -93,7 +93,6 @@ def my_linear_regrassion_result(fit: LinearRegression, x: DataFrame, y: Series, 
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
         order (bool, optional): 독립변수 결과 보고 표의 정렬 기준 (v, p)
         p_value_num (float, optional) : 회귀모형의 유의확률. Drfaults to 0.05
-
     Returns:
         LinearRegression: 회귀분석 모델
     """
