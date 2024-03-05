@@ -23,18 +23,24 @@ from sklearn.metrics import mean_squared_error, ConfusionMatrixDisplay, roc_curv
 from sklearn.model_selection import learning_curve
 from sklearn.preprocessing import StandardScaler
 
-def my_boxplot(df: DataFrame, orient : str = 'v', hue=None, figsize: tuple = (10, 4), dpi: int = 150, plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None) -> None:
+def my_boxplot(df: DataFrame, xname: str = None, yname: str = None,orient : str = 'v', hue=None,palette:str = None, figsize: tuple = (10, 4), dpi: int = 150, plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None) -> None:
     """데이터프레임 내의 모든 컬럼에 대해 상자그림을 그려서 분포를 확인한다.
 
     Args:
         df (DataFrame): 데이터프레임 객체
+        xname (str, optional): x축에 사용할 컬럼명. Defaults to None.
+        yname (str, optional): y축에 사용할 컬럼명. Defaults to None.
         orient('v','x' or 'h','y', optional): 박스플롯의 축을 결정. Defaults to 'v'
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
+        palette (str, optional): 색상 팔레트. Defaults to None.
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
-    sb.boxplot(data=df, orient=orient, hue=hue)
+    if xname != None and yname != None:
+        sb.boxplot(data=df, x=xname, y=yname, orient=orient, palette=palette)
+    else:
+        sb.boxplot(data=df, orient=orient, palette=palette)
     plt.grid(plt_grid)
     plt.title(plt_title)
     if plt_xlabel:plt.xlabel(plt_xlabel)
@@ -42,7 +48,33 @@ def my_boxplot(df: DataFrame, orient : str = 'v', hue=None, figsize: tuple = (10
     plt.show()
     plt.close()
 
-def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str = None, bins = 'auto', kde: bool = True, figsize: tuple=(10, 4), plt_title : str = None, plt_xlabel : str = None, plt_ylabel : str = None, plt_grid : bool = True, dpi: int = 150) -> None:
+def my_kdeplot(df: DataFrame, xname: str = None, yname: str = None, hue: str = None, palette: str = None, fill: bool = False, fill_alpha: float = 0.3, linewidth: float = 1, figsize: tuple=(10, 5), dpi: int=100) -> None:
+    """데이터프레임 내의 컬럼에 대해 커널밀도추정을 그려서 분포를 확인한다.
+
+    Args:
+        df (DataFrame): 데이터프레임 객체
+        xname (str, optional): x축에 사용할 컬럼명. Defaults to None.
+        yname (str, optional): y축에 사용할 컬럼명. Defaults to None.
+        hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
+        palette (str, optional): 색상 팔레트. Defaults to None.
+        fill (bool, optional): 채우기 여부. Defaults to False.
+        fill_alpha (float, optional): 채우기의 투명도. Defaults to 0.3.
+        linewidth (float, optional): 선의 두께. Defaults to 0.5.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
+        dpi (int, optional): 그래프의 해상도. Defaults to 200.
+    """
+    plt.figure(figsize=figsize, dpi=dpi)
+    
+    if fill:
+        sb.kdeplot(data=df, x=xname, y=yname, hue=hue, palette=palette, fill=fill, alpha=fill_alpha, linewidth=linewidth)
+    else:
+        sb.kdeplot(data=df, x=xname, y=yname, hue=hue, palette=palette, fill=fill, linewidth=linewidth)
+    plt.grid()
+    # plt.tight_layout()
+    plt.show()
+    plt.close()
+
+def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str = None, bins = 'auto', palette : str = None,kde: bool = True, figsize: tuple=(10, 4), plt_title : str = None, plt_xlabel : str = None, plt_ylabel : str = None, plt_grid : bool = True, dpi: int = 150) -> None:
     """데이터프레임 내의 컬럼에 대해 히스토그램을 그려서 분포를 확인한다.
 
     Args:
@@ -51,13 +83,14 @@ def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str =
         yname (str): y축에 사용할 컬럼명 x,y 두 축중 하나만 사용
         hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
         bins (int or list ,optional): 히스토그램의 구간 수 혹은 리스트. Defaults to auto.
+        palette (str, optional): 색상 팔레트. Defaults to None.
         kde (bool, optional): 커널밀도추정을 함께 출력할지 여부. Defaults to True.
         figsize (tuple, optional): 그래프의 크기. Defaults to (10, 4).
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     plt.figure(figsize=figsize, dpi=dpi)
     
-    sb.histplot(data=df, x=xname, y=yname, hue=hue, kde=True, bins=bins)
+    sb.histplot(data=df, x=xname, y=yname, hue=hue, kde=True, bins=bins, palette = palette)
 
         
     plt.grid(plt_grid)
@@ -66,6 +99,46 @@ def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str =
     plt.ylabel(plt_ylabel)
     plt.show()
     plt.close()
+
+def my_stackplot(df: DataFrame, xname: str, hue: str, palette: str = None, figsize: tuple=(10, 5), dpi: int=150,plt_title:str = None) -> None:
+    """hue로 구분되는 막대 그래프를 비율로 표시한다.
+
+    Args:
+        df (DataFrame): 데이터프레임 객체
+        xname (str): x축에 사용할 컬럼명
+        hue (str, optional): 색상을 구분할 기준이 되는 컬럼명. Defaults to None.
+        kde (bool, optional): 커널밀도추정을 함께 출력할지 여부. Defaults to True.
+        multiple (str, optional): hue가 있을 경우 전체의 비율을 어떻게 표시할지 여부. Deafults to layer
+        palette (str, optional): 색상 팔레트. Defaults to None.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 150.
+    """
+    plt.figure(figsize=figsize, dpi=dpi)
+
+    
+    ax = sb.histplot(data=df, x=xname, hue=hue, palette=palette, 
+                     linewidth=0.5,
+                     stat='probability',     # 전체에서의 비율로 그리기
+                     multiple='fill',        # 전체를 100%로 그리기
+                     shrink=0.8)             # 막대의 폭
+    
+    # 그래프의 x축 항목 수 만큼 반복
+    for p in ax.patches:
+        # 각 막대의 위치, 넓이, 높이
+        left, bottom, width, height = p.get_bbox().bounds
+        # 막대의 중앙에 글자 표시하기
+        ax.annotate("%0.1f%%" % (height * 100), xy=(left+width/2, bottom+height/2), ha='center', va='center')
+    
+    xticks = list(df[xname].unique())
+    try:
+        plt.xticks(xticks, xticks)
+    except:
+        pass
+    plt.title(plt_title)
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
 
 def my_scatterplot(df: DataFrame, xname: str = None, yname: str = None, hue=None, figsize: tuple=(10, 4), plt_title : str = None, plt_grid : bool = True, dpi: int = 150) -> None:
     """데이터프레임 내의 두 컬럼에 대해 산점도를 그려서 관계를 확인한다.

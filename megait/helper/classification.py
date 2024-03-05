@@ -293,6 +293,7 @@ def my_classification_report(estimator: any, x: DataFrame = None, y: Series = No
         "표준오차": np.round(se[1:], 3),
         "t": np.round(t[1:], 4),
         "유의확률": np.round(p_values[1:], 3),
+        "OddsRate" : np.round(np.exp(estimator.coef_[0]), 4)
     })
 
     my_pretty_table(result_df)

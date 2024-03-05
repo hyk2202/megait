@@ -11,6 +11,16 @@
 | $값_2$ | `값_2` | 밑수 |
 | $\sqrt{값}$ | `\\sqrt{값}` | 제곱근 |
 | $\sum$ | `\sum` | 합계 |
+| $\approx$ | `\approx` | 근사치 |
+| $\sim$ | `\sim` | 물결표 |
+| $\frac{1}{1}$ | `\frac{1}{1}` | 분수표현 |
+| $\times$ | `\times` | 곱 |
+| $\leqq$, $\leq$ | `\leqq`, `\leq` | 부등호 |
+| $\geqq$, $\geq$ | `\geqq`, `\geq` | 부등호 |
+| $\ll$, $\gg$ | `\ll`, `\gg` | 부등호 |
+| $\neq$ | `\neq` | 같지않다 |
+| $\hat{x}$ | `\hat{x}` | hat |
+
 
 ## 통계기호
 

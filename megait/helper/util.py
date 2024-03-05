@@ -203,7 +203,8 @@ def my_standard_scaler(data: DataFrame, yname: str = None) -> DataFrame:
         std_df[category_fields] = cate
     
     # 분리했던 종속변수 결합
-    std_df[yname] = y
+    if yname:
+        std_df[yname] = y
     
     return std_df
 

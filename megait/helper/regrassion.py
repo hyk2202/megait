@@ -200,7 +200,14 @@ def my_auto_linear_regrassion(df:DataFrame, yname:str, cv:int=5, learning_curve:
     x = x_test
     y = y_test
     y_pred = fit.predict(x)
+    expr = "{yname} = ".format(yname=yname)
 
+    for i, v in enumerate(xnames):
+        expr += "%0.3f * %s + " % (fit.coef_[i], v)
+
+    expr += "%0.3f" % fit.intercept_
+    print("[회귀식]")
+    print(expr, end="\n\n")
     resid = y - y_pred
 
     # 절편과 계수를 하나의 배열로 결합
