@@ -465,7 +465,7 @@ def my_dummies(data: DataFrame, *args: str) -> DataFrame:
     if not args: args = [x for x in data.columns if data[x].dtypes=='category']
     else: args = list(args)
                 
-    return get_dummies(data, columns=args, drop_first=True)
+    return get_dummies(data, columns=args, drop_first=True, dtype = 'int')
 
 def my_trend(x: any, y: any, degree:int=2, value_count=100) -> tuple:
     """x, y 데이터에 대한 추세선을 구한다.
