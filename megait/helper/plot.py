@@ -45,7 +45,7 @@ def my_boxplot(df: DataFrame, xname: str = None, yname: str = None,orient : str 
         sb.boxplot(data=df, orient=orient, palette=palette, ax= ax)
     ax.grid(plt_grid)
     if callback : callback(ax)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if plt_xlabel:ax.set_xlabel(plt_xlabel)
     ax.set_ylabel(plt_ylabel)
     plt.show()
@@ -100,7 +100,7 @@ def my_histplot(df: DataFrame, xname: str = None, yname : str = None, hue: str =
 
         
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if plt_xlabel:ax.set_xlabel(plt_xlabel)
     ax.set_ylabel(plt_ylabel)
     if callback : callback(ax)
@@ -143,13 +143,12 @@ def my_stackplot(df: DataFrame, xname: str, hue: str, palette: str = None, figsi
         xticks = list(df[xname].unique())
         ax.set_xticks(xticks)
         ax.set_xticklabels(xticks)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
 
     plt.tight_layout()
     plt.show()
     plt.close()
-
 
 def my_scatterplot(df: DataFrame, xname: str = None, yname: str = None, hue=None, figsize: tuple=(10, 4), plt_title : str = None, plt_grid : bool = True, dpi: int = 150, callback: any = None) -> None:
     """데이터프레임 내의 두 컬럼에 대해 산점도를 그려서 관계를 확인한다.
@@ -167,7 +166,7 @@ def my_scatterplot(df: DataFrame, xname: str = None, yname: str = None, hue=None
     ax = plt.gca()
     sb.scatterplot(data=df, x=xname, y=yname, hue=hue,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -189,7 +188,7 @@ def my_regplot(df: DataFrame, xname: str = None, yname: str = None, palette:str=
     ax = plt.gca()
     sb.regplot(data=df, x=xname, y=yname, ci = ci,color = palette,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
 
     plt.show()
@@ -227,7 +226,7 @@ def my_pairplot(df: DataFrame, diag_kind: str = "auto", hue = None, figsize: tup
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
     """
     sb.pairplot(df, hue=hue, diag_kind=diag_kind, kind = kind)
-    plt.title(plt_title)
+    if plt_title:plt.title(plt_title)
     plt.show()
     plt.close()
 
@@ -246,7 +245,7 @@ def my_countplot(df: DataFrame, xname: str = None, yname: str = None, hue=None, 
     ax = plt.gca()
     sb.countplot(data=df, x=xname, y=yname, hue=hue,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if plt_xlabel : ax.set_xlabel(plt_xlabel)
     if plt.ylabel : ax.set_ylabel(plt_ylabel)
     if callback:callback(ax)
@@ -269,7 +268,7 @@ def my_barplot(df: DataFrame, xname: str = None, yname: str = None, hue = None, 
     ax= plt.gca()
     sb.barplot(data=df, x=xname, y=yname, hue=hue,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if plt_xlabel : ax.set_xlabel(plt_xlabel)
     if plt.ylabel : ax.set_ylabel(plt_ylabel)
     if callback:callback(ax)
@@ -312,7 +311,7 @@ def my_violinplot(df: DataFrame, xname: str = None, yname: str = None, hue = Non
     ax=plt.gca()
     sb.violinplot(data=df, x=xname, y=yname, hue=hue,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -333,7 +332,7 @@ def my_pointplot(df: DataFrame, xname: str = None, yname: str = None, hue = None
     ax=plt.gca()
     sb.pointplot(data=df, x=xname, y=yname, hue=hue,ax=ax)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -354,7 +353,7 @@ def my_jointplot(df: DataFrame, xname: str = None, yname: str = None, hue = None
     g.fig.set_figwidth(figsize[0])
     g.fig.set_figheight(figsize[1])
     g.fig.set_dpi(dpi)
-    plt.title(plt_title)
+    if plt_title:plt.title(plt_title)
     if callback:callback(g)
 
     plt.show()
@@ -373,7 +372,7 @@ def my_heatmap(data: DataFrame, cmap = 'coolwarm', figsize: tuple = (10, 4), plt
     plt.figure(figsize=figsize, dpi=dpi)
     ax=plt.gca()
     sb.heatmap(data, annot=True, cmap=cmap, fmt='.2g',ax=ax)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -411,7 +410,7 @@ def my_convex_hull(data: DataFrame, xname: str = None, yname: str = None, * , hu
     sb.scatterplot(data=data, x=xname, y=yname, hue=hue, palette=cmap,ax=ax)
     
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -465,7 +464,7 @@ def my_kde_confidence_interval(data: DataFrame, clevel=0.95, figsize: tuple = (1
 
     ax.set_ylim(ymin, ymax*1.1)
     ax.grid(plt_grid)
-    ax.title(plt_title)
+    if plt_title:ax.set_title(plt_title)
     if callback:callback(ax)
     plt.show()
     plt.close()
@@ -839,3 +838,4 @@ def my_roc_pr_curve(y: Series, y_proba: Series, figsize: tuple = (16, 6), dpi=15
     if callback:callback(ax[0],ax[1])
     plt.show()
     plt.close()
+
