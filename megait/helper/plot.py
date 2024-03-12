@@ -51,6 +51,32 @@ def my_boxplot(df: DataFrame, xname: str = None, yname: str = None,orient : str 
     plt.show()
     plt.close()
 
+def my_lineplot(
+    df: DataFrame,
+    xname: str = None,
+    yname: str = None,
+    hue: str = None,
+    palette: str = None,
+    figsize: tuple = (10, 5),
+    dpi: int = 100,
+    plt_title : str = None, plt_grid : bool = True, plt_xlabel : str = None, plt_ylabel : str = None,
+    callback: any = None,
+) -> None:
+    plt.figure(figsize=figsize, dpi=dpi)
+    ax = plt.gca()
+
+    sb.lineplot(data=df, x=xname, y=yname, hue=hue, palette=palette, ax=ax)
+    ax.grid(plt_grid)
+    if plt_title: ax.set_title(plt_title)
+    if plt_xlabel:ax.set_xlabel(plt_xlabel)
+    if plt_ylabel:ax.set_ylabel(plt_ylabel)
+    if callback:
+        callback(ax)
+
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
 def my_kdeplot(df: DataFrame, xname: str = None, yname: str = None, hue: str = None, palette: str = None, fill: bool = False, plt_grid:bool=False,fill_alpha: float = 0.3, linewidth: float = 1, figsize: tuple=(10, 5), dpi: int=100,callback:any = None) -> None:
     """데이터프레임 내의 컬럼에 대해 커널밀도추정을 그려서 분포를 확인한다.
 
@@ -716,6 +742,17 @@ def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', 
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
         callback (any, optional): ax객체를 전달받아 추가적인 옵션을 처리할 수 있는 콜백함수. Defaults to None.
     """
+
+
+    # 이진분류인지 다항분류인지 구분
+    labels = sorted(list(y.unique()))
+    is_binary = len(labels) == 2
+
+    if is_binary:
+        labels = ["Negative", "Positive"]
+    else:
+        labels = None
+
     plt.figure(figsize=figsize, dpi=dpi)
     ax = plt.gca()
     
@@ -724,7 +761,7 @@ def my_confusion_matrix(y: np.ndarray, y_pred: np.ndarray, cmap: str = 'Blues', 
     ConfusionMatrixDisplay.from_predictions(
         y,              # 관측치
         y_pred,         # 예측치
-        display_labels=list(set(y)),
+        display_labels=labels,
         cmap=cmap,
         text_kw={'fontsize': 24, 'weight': 'bold'},
         ax=ax
@@ -744,7 +781,12 @@ def my_roc_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=150, c
         callback (any, optional): ax객체를 전달받아 추가적인 옵션을 처리할 수 있는 콜백함수. Defaults to None.
     """
     # 두 번째 파라미터가 판정결과가 아닌 1로 판정할 확률값
-    fpr, tpr, thresholds = roc_curve(y, y_proba)
+    labels = sorted(list(y.unique()))
+    is_binary = len(labels) == 2
+    if is_binary:
+        fpr, tpr, thresholds = roc_curve(y, y_proba)
+    else:
+        fpr, tpr, thresholds = roc_curve(y, y_proba, average="macro")
 
     plt.figure(figsize=figsize, dpi=dpi)
     ax = plt.gca()
@@ -775,6 +817,10 @@ def my_pr_curve(y: Series, y_proba: Series, figsize: tuple = (8, 6), dpi=150, ca
         dpi (int, optional): 그래프의 해상도. Defaults to 150.
         callback (any, optional): ax객체를 전달받아 추가적인 옵션을 처리할 수 있는 콜백함수. Defaults to None.
     """
+
+    labels = sorted(list(y.unique()))
+    is_binary = len(labels) == 2
+
     precision, recall, thresholds = precision_recall_curve(y_true=y, probas_pred=y_proba)
     y_test_mean = y.mean()
 
@@ -839,3 +885,117 @@ def my_roc_pr_curve(y: Series, y_proba: Series, figsize: tuple = (16, 6), dpi=15
     plt.show()
     plt.close()
 
+def my_distribution_by_class(
+    data: DataFrame,
+    xnames: list = None,
+    hue: str = None,
+    type: str = "kde",
+    bins: any = 5,
+    palette: str = None,
+    fill: bool = False,
+    figsize: tuple = (10, 5),
+    dpi: int = 100,
+    callback: any = None,
+) -> None:
+    """클래스별로 독립변수의 분포를 출력한다.
+
+    Args:
+        data (DataFrame): 독립변수
+        xnames (list, optional): 독립변수의 이름. Defaults to None.
+        hue (str, optional): 클래스별로 구분할 변수. Defaults to None.
+        type (str, optional): 그래프 종류 (kde, hist, histkde). Defaults to "kde".
+        bins (any, optional): 히스토그램의 구간 수. Defaults to 5.
+        palette (str, optional): 칼라맵. Defaults to None.
+        fill (bool, optional): kde 그래프의 채우기 여부. Defaults to False.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+        callback (any, optional): ax객체를 전달받아 추가적인 옵션을 처리할 수 있는 콜백함수. Defaults to None.
+    """
+    if xnames == None:
+        xnames = data.columns
+
+    for i, v in enumerate(xnames):
+        # 종속변수이거나 숫자형이 아닌 경우는 제외
+        if v == hue or data[v].dtype not in [
+            "int",
+            "int32",
+            "int64",
+            "float",
+            "float32",
+            "float64",
+        ]:
+            continue
+        kde=False
+        if type == "kde":
+            my_kdeplot(
+                data,
+                v,
+                hue=hue,
+                palette=palette,
+                fill=fill,
+                figsize=figsize,
+                dpi=dpi,
+                callback=callback,
+            )
+        else :
+            if 'kde' in type:
+                kde = True
+            my_histplot(
+                data,
+                v,
+                hue=hue,
+                bins=bins,
+                kde=kde,
+                palette=palette,
+                figsize=figsize,
+                dpi=dpi,
+                callback=callback,
+            )
+
+def my_scatter_by_class(
+    data: DataFrame,
+    group: list = None,
+    hue: str = None,
+    palette: str = None,
+    outline: bool = False,
+    figsize: tuple = (10, 5),
+    dpi: int = 100,
+    callback: any = None,
+) -> None:
+    """클래스별로 독립변수의 산점도를 출력한다.
+
+    Args:
+        data (DataFrame): 독립변수
+        group (list, optional): 독립변수의 조합. Defaults to None.
+        hue (str, optional): 클래스별로 구분할 변수. Defaults to None.
+        palette (str, optional): 칼라맵. Defaults to None.
+        outline (bool, optional): 테두리 여부. Defaults to False.
+        figsize (tuple, optional): 그래프의 크기. Defaults to (10, 5).
+        dpi (int, optional): 그래프의 해상도. Defaults to 100.
+        callback (any, optional): ax객체를 전달받아 추가적인 옵션을 처리할 수 있는 콜백함수. Defaults to None.
+    """
+    if group == None:
+        group = []
+
+        xnames = data.columns
+
+        for i, v in enumerate(xnames):
+            if v == hue or data[v].dtype not in [
+                "int",
+                "int32",
+                "int64",
+                "float",
+                "float32",
+                "float64",
+            ]:
+                continue
+
+            j = (i + 1) % len(xnames)
+            group.append([v, xnames[j]])
+
+    if outline:
+        for i, v in enumerate(group):
+            my_convex_hull(data, v[0], v[1], hue, palette, figsize, dpi, callback)
+    else:
+        for i, v in enumerate(group):
+            my_scatterplot(data, v[0], v[1], hue, palette, figsize, dpi, callback)

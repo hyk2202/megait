@@ -4,7 +4,7 @@ from pandas import DataFrame, Series, concat
 from sklearn.metrics import log_loss, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
-
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from scipy.stats import norm
 
 from helper.util import my_pretty_table
@@ -108,6 +108,10 @@ def my_classification_result(estimator: any, x_train: DataFrame = None, y_train:
     
     scores = []
     score_names = []
+
+    # 이진분류인지 다항분류인지 구분
+    labels = list(y_train.unique())
+    is_binary = len(labels) == 2
     
     if x_train is not None and y_train is not None:
         # 추정치
@@ -116,31 +120,41 @@ def my_classification_result(estimator: any, x_train: DataFrame = None, y_train:
         y_train_pred_proba_1 = y_train_pred_proba[:, 1]
         
         # 의사결정계수 --> 다항로지스틱에서는 사용 X
-        y_train_log_loss_test = -log_loss(y_train, y_train_pred_proba, normalize=False)
-        y_train_null = np.ones_like(y_train) * y_train.mean()
-        y_train_log_loss_null = -log_loss(y_train, y_train_null, normalize=False)
-        y_train_pseudo_r2 = 1 - (y_train_log_loss_test / y_train_log_loss_null)
+        if is_binary:
+            y_train_log_loss_test = -log_loss(y_train, y_train_pred_proba, normalize=False)
+            y_train_null = np.ones_like(y_train) * y_train.mean()
+            y_train_log_loss_null = -log_loss(y_train, y_train_null, normalize=False)
+            y_train_pseudo_r2 = 1 - (y_train_log_loss_test / y_train_log_loss_null)
         
         # 혼동행렬
         y_train_conf_mat = confusion_matrix(y_train, y_train_pred)
         
-        # TN,FP,FN,TP --> 다항로지스틱에서는 사용 X
-        ((TN, FP),(FN, TP)) = y_train_conf_mat
+        if is_binary:
+            # TN,FP,FN,TP --> 다항로지스틱에서는 사용 X
+            ((TN, FP),(FN, TP)) = y_train_conf_mat
 
-        # 성능평가
-        # 의사결정계수, 위양성율, 특이성, AUC는 다항로지스틱에서는 사용 불가
-        # 나머지 항목들은 코드 변경 예정
-        result = {
-            "의사결정계수(Pseudo R2)": y_train_pseudo_r2,
-            "정확도(Accuracy)": accuracy_score(y_train, y_train_pred),
-            "정밀도(Precision)": precision_score(y_train, y_train_pred),
-            "재현율(Recall)": recall_score(y_train, y_train_pred),
-            "위양성율(Fallout)": FP / (TN + FP),
-            "특이성(TNR)": 1 - (FP / (TN + FP)),
-            "F1 Score": f1_score(y_train, y_train_pred),
-            "AUC": roc_auc_score(y_train, y_train_pred_proba_1)
-        }
-        
+            # 성능평가
+            # 의사결정계수, 위양성율, 특이성, AUC는 다항로지스틱에서는 사용 불가
+            # 나머지 항목들은 코드 변경 예정
+            result = {
+                "의사결정계수(Pseudo R2)": y_train_pseudo_r2,
+                "정확도(Accuracy)": accuracy_score(y_train, y_train_pred),
+                "정밀도(Precision)": precision_score(y_train, y_train_pred),
+                "재현율(Recall)": recall_score(y_train, y_train_pred),
+                "위양성율(Fallout)": FP / (TN + FP),
+                "특이성(TNR)": 1 - (FP / (TN + FP)),
+                "F1 Score": f1_score(y_train, y_train_pred),
+                "AUC": roc_auc_score(y_train, y_train_pred_proba_1)
+            }
+        else:
+            result = {
+                "정확도(Accuracy)": accuracy_score(y_train, y_train_pred),
+                "정밀도(Precision)": precision_score(y_train, y_train_pred, average="macro"),
+                "재현율(Recall)": recall_score(y_train, y_train_pred, average="macro"),
+                "F1 Score": f1_score(y_train, y_train_pred, average="macro"),
+                "AUC(ovo)": roc_auc_score(y_train, y_train_pred_proba, average="macro", multi_class='ovo'),
+                "AUC(ovr)": roc_auc_score(y_train, y_train_pred_proba, average="macro", multi_class='ovr')
+            }
         scores.append(result)
         score_names.append("훈련데이터")
         
@@ -150,45 +164,66 @@ def my_classification_result(estimator: any, x_train: DataFrame = None, y_train:
         y_test_pred_proba = estimator.predict_proba(x_test)
         y_test_pred_proba_1 = y_test_pred_proba[:, 1]
         
-        # 의사결정계수
-        y_test_log_loss_test = -log_loss(y_test, y_test_pred_proba, normalize=False)
-        y_test_null = np.ones_like(y_test) * y_test.mean()
-        y_test_log_loss_null = -log_loss(y_test, y_test_null, normalize=False)
-        y_test_pseudo_r2 = 1 - (y_test_log_loss_test / y_test_log_loss_null)
+        if is_binary:
+            # 의사결정계수
+            y_test_log_loss_test = -log_loss(y_test, y_test_pred_proba, normalize=False)
+            y_test_null = np.ones_like(y_test) * y_test.mean()
+            y_test_log_loss_null = -log_loss(y_test, y_test_null, normalize=False)
+            y_test_pseudo_r2 = 1 - (y_test_log_loss_test / y_test_log_loss_null)
         
         # 혼동행렬
         y_test_conf_mat = confusion_matrix(y_test, y_test_pred)
         
-        # TN,FP,FN,TP
-        ((TN, FP),(FN, TP)) = y_test_conf_mat
+        if is_binary:
+            # TN,FP,FN,TP
+            ((TN, FP),(FN, TP)) = y_test_conf_mat
 
-        # 성능평가
-        result = {
-            "의사결정계수(Pseudo R2)": y_test_pseudo_r2,
-            "정확도(Accuracy)": accuracy_score(y_test, y_test_pred),
-            "정밀도(Precision)": precision_score(y_test, y_test_pred),
-            "재현율(Recall)": recall_score(y_test, y_test_pred),
-            "위양성율(Fallout)": FP / (TN + FP),
-            "특이성(TNR)": 1 - (FP / (TN + FP)),
-            "F1 Score": f1_score(y_test, y_test_pred),
-            "AUC": roc_auc_score(y_test, y_test_pred_proba_1)
-        }
+            # 성능평가
+            result = {
+                "의사결정계수(Pseudo R2)": y_test_pseudo_r2,
+                "정확도(Accuracy)": accuracy_score(y_test, y_test_pred),
+                "정밀도(Precision)": precision_score(y_test, y_test_pred),
+                "재현율(Recall)": recall_score(y_test, y_test_pred),
+                "위양성율(Fallout)": FP / (TN + FP),
+                "특이성(TNR)": 1 - (FP / (TN + FP)),
+                "F1 Score": f1_score(y_test, y_test_pred),
+                "AUC": roc_auc_score(y_test, y_test_pred_proba_1)
+            }
+        else:
+            result = {
+                "정확도(Accuracy)": accuracy_score(y_test, y_test_pred),
+                "정밀도(Precision)": precision_score(y_test, y_test_pred, average="macro"),
+                "재현율(Recall)": recall_score(y_test, y_test_pred, average="macro"),
+                "F1 Score": f1_score(y_test, y_test_pred, average="macro"),
+                "AUC(ovo)": roc_auc_score(y_test, y_test_pred_proba, average="macro", multi_class='ovo'),
+                "AUC(ovr)": roc_auc_score(y_test, y_test_pred_proba, average="macro", multi_class='ovr')
+            }
         
         scores.append(result)
         score_names.append("검증데이터")
+
+    if is_binary:            
+        # 각 항목의 설명 추가
+        result = {
+                "의사결정계수(Pseudo R2)": "로지스틱회귀의 성능 측정 지표로, 1에 가까울수록 좋은 모델",
+                "정확도(Accuracy)": "예측 결과(TN,FP,TP,TN)가 실제 결과(TP,TN)와 일치하는 정도",
+                "정밀도(Precision)": "양성으로 예측한 결과(TP,FP) 중 실제 양성(TP)인 비율",
+                "재현율(Recall)": "실제 양성(TP,FN) 중 양성(TP)으로 예측한 비율",
+                "위양성율(Fallout)": "실제 음성(FP,TN) 중 양성(FP)으로 잘못 예측한 비율",
+                "특이성(TNR)": "실제 음성(FP,TN) 중 음성(TN)으로 정확히 예측한 비율",
+                "F1 Score": "정밀도와 재현율의 조화평균",
+                "AUC": "ROC Curve의 밑면적으로, 1에 가까울수록 좋은 모델"
+            }
+    else:
+        result = {
+                "정확도(Accuracy)": "예측 결과(TN,FP,TP,TN)가 실제 결과(TP,TN)와 일치하는 정도",
+                "정밀도(Precision)": "양성으로 예측한 결과(TP,FP) 중 실제 양성(TP)인 비율",
+                "재현율(Recall)": "실제 양성(TP,FN) 중 양성(TP)으로 예측한 비율",
+                "F1 Score": "정밀도와 재현율의 조화평균",
+                "AUC(ovo)": "ROC Curve의 밑면적으로, 1에 가까울수록 좋은 모델",
+                "AUC(ovr)": "ROC Curve의 밑면적으로, 1에 가까울수록 좋은 모델"
+            }
         
-    # 각 항목의 설명 추가
-    result = {
-            "의사결정계수(Pseudo R2)": "로지스틱회귀의 성능 측정 지표로, 1에 가까울수록 좋은 모델",
-            "정확도(Accuracy)": "예측 결과(TN,FP,TP,TN)가 실제 결과(TP,TN)와 일치하는 정도",
-            "정밀도(Precision)": "양성으로 예측한 결과(TP,FP) 중 실제 양성(TP)인 비율",
-            "재현율(Recall)": "실제 양성(TP,FN) 중 양성(TP)으로 예측한 비율",
-            "위양성율(Fallout)": "실제 음성(FP,TN) 중 양성(FP)으로 잘못 예측한 비율",
-            "특이성(TNR)": "실제 음성(FP,TN) 중 음성(TN)으로 정확히 예측한 비율",
-            "F1 Score": "정밀도와 재현율의 조화평균",
-            "AUC": "ROC Curve의 밑면적으로, 1에 가까울수록 좋은 모델"
-        }
-    
     scores.append(result)
     score_names.append("설명")
         
@@ -283,6 +318,12 @@ def my_classification_report(estimator: any, x: DataFrame = None, y: Series = No
     # p-value
     p_values = (1 - norm.cdf(abs(t))) * 2
 
+    # VIF
+    if len(x.columns) > 1:
+        vif = [variance_inflation_factor(x, list(x.columns).index(v)) for i, v in enumerate(x.columns)]
+    else:
+        vif = 0
+
     # 결과표 생성
     xnames = estimator.feature_names_in_
 
@@ -293,8 +334,11 @@ def my_classification_report(estimator: any, x: DataFrame = None, y: Series = No
         "표준오차": np.round(se[1:], 3),
         "t": np.round(t[1:], 4),
         "유의확률": np.round(p_values[1:], 3),
+        "VIF": vif,
         "OddsRate" : np.round(np.exp(estimator.coef_[0]), 4)
     })
+
+    result_df.sort_values('VIF', ascending=False, inplace=True)
 
     my_pretty_table(result_df)
 
