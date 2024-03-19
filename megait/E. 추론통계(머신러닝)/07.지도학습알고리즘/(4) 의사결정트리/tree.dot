@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="Malgun Gothic"] ;
+edge [fontname="Malgun Gothic"] ;
+0 [label="Glucose <= 143.5\nentropy = 0.927\nsamples = 614\nvalue = [404, 210]\nclass = 0", fillcolor="#f3c2a0"] ;
+1 [label="BMI <= 26.35\nentropy = 0.788\nsamples = 471\nvalue = [360, 111]\nclass = 0", fillcolor="#eda876"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="Age <= 59.0\nentropy = 0.133\nsamples = 108\nvalue = [106, 2]\nclass = 0", fillcolor="#e5833d"] ;
+1 -> 2 ;
+3 [label="entropy = 0.079\nsamples = 102\nvalue = [101, 1]\nclass = 0", fillcolor="#e5823b"] ;
+2 -> 3 ;
+4 [label="entropy = 0.65\nsamples = 6\nvalue = [5, 1]\nclass = 0", fillcolor="#ea9a61"] ;
+2 -> 4 ;
+5 [label="Glucose <= 103.5\nentropy = 0.882\nsamples = 363\nvalue = [254, 109]\nclass = 0", fillcolor="#f0b78e"] ;
+1 -> 5 ;
+6 [label="entropy = 0.561\nsamples = 137\nvalue = [119, 18]\nclass = 0", fillcolor="#e99457"] ;
+5 -> 6 ;
+7 [label="entropy = 0.972\nsamples = 226\nvalue = [135, 91]\nclass = 0", fillcolor="#f7d6be"] ;
+5 -> 7 ;
+8 [label="Glucose <= 166.5\nentropy = 0.89\nsamples = 143\nvalue = [44, 99]\nclass = 1", fillcolor="#91c9f1"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label="DiabetesPedigreeFunction <= 0.331\nentropy = 0.977\nsamples = 85\nvalue = [35, 50]\nclass = 1", fillcolor="#c4e2f7"] ;
+8 -> 9 ;
+10 [label="entropy = 0.963\nsamples = 31\nvalue = [19, 12]\nclass = 0", fillcolor="#f5d1b6"] ;
+9 -> 10 ;
+11 [label="entropy = 0.877\nsamples = 54\nvalue = [16, 38]\nclass = 1", fillcolor="#8cc6f0"] ;
+9 -> 11 ;
+12 [label="SkinThickness <= 32.5\nentropy = 0.623\nsamples = 58\nvalue = [9, 49]\nclass = 1", fillcolor="#5dafea"] ;
+8 -> 12 ;
+13 [label="entropy = 0.787\nsamples = 34\nvalue = [8, 26]\nclass = 1", fillcolor="#76bbed"] ;
+12 -> 13 ;
+14 [label="entropy = 0.25\nsamples = 24\nvalue = [1, 23]\nclass = 1", fillcolor="#42a1e6"] ;
+12 -> 14 ;
+}
