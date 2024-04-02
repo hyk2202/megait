@@ -2,36 +2,36 @@
 
 일반적으로 단일 학습모델을 사용하면 충분한 성능을 확보하기 어렵다.
 
-여러 개의 학습모델을 생성하고 그 예측을 결합함으로써 보다 정확한 최종 예측을 도출하는 기법
+이러한 부분을 보완하기 위해 여러 개의 학습모델을 생성하고 그 예측을 결합함으로써 보다 정확한 최종 예측을 도출하는 기법
 
-## 항상블 학습의 유형
+보팅, 배깅, 부스팅의 기법으로 구분된다.
 
-### 보팅(Voting)
+## #01. 보팅(Voting)
 
 다양한 알고리즘을 사용한다. (ex: 로지스틱 + KNN)
 
-각각의 알고리즘이 원본 데이터를 그대로 사용
+각각의 알고리즘이 원본 데이터를 그대로 사용하여 각자 분석을 수행후 결과를 어떻게 종합하느냐에 따라 하드보팅과 소프트보팅으로 나누어 진다.
 
-#### 보팅 방식 구분
+### [1] 보팅 방식 구분
 
 ![img](res/voting.png)
 
-##### Hard Votting (왼쪽그림)
+#### (1) Hard Votting (왼쪽그림)
 
 각 서브샘플에서 예측된 값을 종합하고 최빈값으로 최종 예측값을 결정함
 
 각각의 알고리즘이 예측한 결과값에서 다수결로 결정된 값을 최종 결정값으로 정하는 방식
 
-##### Soft Votting (오른쪽 그림)
+#### (2) Soft Votting (오른쪽 그림)
 
 각 서브샘플에서 확률을 계산하고, 각 확률값을 통해서 최종 예측값을 결정함.
 
-#### Sklearn에서 지원하는 Voting 알고리즘
+#### (3) Sklearn에서 지원하는 Voting 알고리즘
 
 - VotingClassifier
 - VotingRegressor
 
-### 배깅(Bagging)
+## #02. 배깅(Bagging)
 
 Bootstrap Aggregation의 약자
 
@@ -43,14 +43,14 @@ Bootstrap Aggregation의 약자
 
 학습데이터에서 sub-sampling을 진행해서 여러 개의 하위 샘플을 생성하고, 각 샘플들에 대해서 예측을 진행하여 결과를 종합하기 때문에 과적합 가능성이 감소하고 모델의 일반화 가능성이 증가한다는 장점이 있다.
 
-#### Sklearn에서 지원하는 Bagging 알고리즘
+### Sklearn에서 지원하는 Bagging 알고리즘
 
 - BaggingClassifier
 - BaggingRegressor
 - RandomForestClassifier
 - RandomForestRegressor
 
-### 부스팅(Boosting)
+## #03. 부스팅(Boosting)
 
 **가중치**를 활용하여 약 분류기를 강 분류기로 만드는 방법.
 
@@ -62,16 +62,16 @@ Bootstrap Aggregation의 약자
 
 ![img](res/boosting.png)
 
-#### Sklearn에서 지원하는 Boosting 알고리즘
+### Sklearn에서 지원하는 Boosting 알고리즘
 
 - AdaBoostClassifier
 - AdaBoostRegressor
 - GradientBoostingClassifier
 - GradientBoostingRegressor
 
-> XGBoost와 LightGB은 sklearn에서 지원하지 않기 때문에 별도의 라이브러리를 사용
+> XGBoost와 LightGBM은 sklearn에서 지원하지 않기 때문에 별도의 라이브러리를 사용
 
-## 비교
+## #04. 비교
 
 ![res](res/all.png)
 
