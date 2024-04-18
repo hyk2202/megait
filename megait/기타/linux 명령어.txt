@@ -1,0 +1,53 @@
+guest
+1234
+192.168.243.128
+
+pwd : 현재 위치하고 있는 디렉토리 경로 확인
+ls : 현재 폴더내의 목록 보기(list)
+-a : 숨긴파일까지 보기(-a : all)
+-l : 파일 목록을 리스트 형태로 출력
+-al : 숨긴파일까지 함께 리스트 형태로 출력
+
+cd 이동할폴더경로 : 폴더 이동(Change Directory)
+
+sudo systemctl start 서비스명 : 서비스명 시작
+sudo systemctl stop 서비스명 : 서비스명 끝
+sudo systemctl restart 서비스명 : 서비스명 재가동
+sudo systemctl enable 서비스명 : 서비스명 부팅시 자동실행
+sudo systemctl disable 서비스명 : 서비스명 자동실행 해제
+sudo systemctl status 서비스명 : 서비스명 가동상태 확인
+sudo systemctl list-unit-files : 자동실행이 등록된 서비스 목록 확인
+
+sudo systemctl list-unit-files | grep mysql : 자동실행이 등록된 서비스 목록 확인 중 mysql이 포함된 라인만 확인
+
+clear : 출력삭제
+자신의 홈 디렉토리를 의미하는 예약어 `~`
+예를들어 `~/hello` 라는것은
+/home/자기아이디/hello 를 의미한다.
+즉 `cd ~ `는 홈디렉토리로 이동하는것을 의미한다.
+
+vi test.txt
+파일생성
+
+i누르면 쓰기모드
+ 글을 쓴 후 
+esc버튼을 누르고
+:를 누른후 wq(write quit)
+:?검색어 로 원하는 검색어를 찾을 수 있음
+
+vi 를 확장시킨것이 vim
+
+
+파일을 읽기만 하는 경우 cat 파일이름
+
+
+리눅스에서 환경변수 설정 : ~/./zshrc에서
+
+export MY_NAME="TEST"
+export PATH="~/":PATH
+으로 추가한다.
+
+추가후 리로드
+
+alias pip="pip3" // pip3를 pip(별칭)으로 대신입력가능하다
+alias pull="git pull origin main"
