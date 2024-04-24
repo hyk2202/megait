@@ -1,0 +1,19 @@
+sudo chown      -R                  hello        ./hello
+     소유자변경     하위폴더 포함 여부       변경할 소유자     파일/폴더
+
+
+
+
+
+
+
+groupadd 그룹명
+groupdel 그룹명
+useradd 아이디
+useradd -G 그룹명 아이디
+userdel 아이디
+passwd 아이디
+
+접근권한변경 
+sudo chmod 750 ./hello
+          
